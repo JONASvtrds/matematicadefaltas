@@ -1,1079 +1,398 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR" class="dark">
 <head>
-    <meta charset="UTF-8">
-    <title>ValoWeb 3D - Full Models</title>
-    <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
-    <script type="importmap">
-      {
-        "imports": {
-          "three": "https://unpkg.com/three@0.158.0/build/three.module.js",
-          "three/addons/": "https://unpkg.com/three@0.158.0/examples/jsm/"
-        }
-      }
-    </script>
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Teko:wght@400;700&display=swap');
-        body { margin: 0; overflow: hidden; font-family: 'Teko', sans-serif; background: #0f1923; color: white; user-select: none; }
-        
-        /* UI GERAL */
-        .fullscreen-ui {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            background: rgba(15, 25, 35, 0.98); z-index: 50; transition: opacity 0.5s;
-        }
-        
-        button {
-            background: #ff4655; color: white; border: none; padding: 15px 40px;
-            font-size: 24px; font-family: 'Teko'; cursor: pointer; text-transform: uppercase;
-            clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%);
-            margin: 10px; transition: 0.2s; width: 300px;
-        }
-        button:hover { background: white; color: #ff4655; transform: scale(1.05); }
-        input { padding: 10px; width: 280px; margin: 10px; font-family: 'Teko'; font-size: 20px; text-align: center; }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Matemáticador de Faltas • SEDU-ES</title>
 
-        /* SELEÇÃO DE AGENTE (In-Game) */
-        #agent-select { background: rgba(0,0,0,0.8); z-index: 60; display: none; }
-        .agent-card {
-            width: 200px; height: 300px; border: 2px solid #555; margin: 20px;
-            display: flex; flex-direction: column; justify-content: flex-end;
-            cursor: pointer; transition: 0.3s; background-size: cover; background-position: center;
-            overflow: hidden; position: relative;
-        }
-        .agent-card:hover { border-color: #ff4655; transform: scale(1.1); }
-        .agent-name { background: rgba(0,0,0,0.8); width: 100%; text-align: center; font-size: 30px; padding: 10px 0; }
-        .agent-model-container { width: 100%; height: 100%; position: absolute; top: 0; left: 0; }
+  <!-- Fonte Inter (Google Fonts) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 
-        /* HUD */
-        #hud { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: none; }
-        #crosshair {
-            position: absolute; top: 50%; left: 50%; width: 6px; height: 6px;
-            background: #00ff00; transform: translate(-50%, -50%); border-radius: 50%; border: 1px solid black;
-        }
-        #ammo-box { position: absolute; bottom: 20px; right: 20px; text-align: right; font-size: 40px; text-shadow: 2px 2px 0 #000; }
-        #hp-box { position: absolute; bottom: 20px; left: 20px; font-size: 40px; color: #00ff00; text-shadow: 2px 2px 0 #000; }
-        
-        /* HUD DE HABILIDADE */
-        #ability-hud {
-            position: absolute; bottom: 120px; left: 50%; transform: translateX(-50%);
-            background: rgba(15, 25, 35, 0.8); padding: 15px 30px; border: 2px solid #ff4655;
-            display: none; pointer-events: auto; text-align: center; min-width: 200px;
-        }
-        #ability-hud button {
-            width: 120px; padding: 8px 15px; font-size: 18px; margin-top: 10px; pointer-events: all;
-        }
-
-        /* LOJA */
-        #shop {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: rgba(16, 24, 35, 0.95); border: 2px solid #ff4655; padding: 30px;
-            display: none; z-index: 70; text-align: center;
-        }
-        .shop-item { display: inline-block; width: 180px; background: #2c3e50; margin: 10px; padding: 10px; cursor: pointer; border: 1px solid #555; }
-        .shop-item:hover { border-color: #00ff00; }
-
-        /* MENU DE CHEATS */
-        #cheat-menu {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: rgba(16, 24, 35, 0.98); border: 2px solid #00ff00; padding: 30px;
-            display: none; z-index: 80; text-align: center; min-width: 300px;
-        }
-        .cheat-item { margin: 15px 0; }
-        .cheat-item label { font-size: 22px; margin-left: 10px; }
-
-        .hidden { display: none !important; }
-        
-        /* BOTÕES DO JOGO */
-        .game-buttons {
-            position: absolute; top: 20px; right: 20px; display: flex; gap: 10px; z-index: 30;
-        }
-        .game-buttons button { width: 150px; padding: 10px; font-size: 18px; }
-    </style>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
 </head>
-<body>
+<body class="min-h-screen bg-slate-950 text-slate-100 font-sans antialiased selection:bg-sky-500/30 selection:text-sky-200 flex flex-col justify-between">
 
-    <div id="main-menu" class="fullscreen-ui">
-        <h1 style="font-size: 80px; color: #ff4655; margin: 0;">VALOWEB 2.0</h1>
-        <p>VERSÃO P2P COM MODELOS 3D</p>
-        <button onclick="startGame(false)">SINGLE PLAYER</button>
-        <div style="height: 20px;"></div>
-        <button onclick="createHost()">CRIAR SALA</button>
+  <!-- Faixa decorativa superior inspirada nas cores do Espírito Santo -->
+  <div class="h-1.5 w-full bg-gradient-to-r from-sky-500 via-slate-100 to-rose-500"></div>
+
+  <!-- Container Principal -->
+  <main class="w-full max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-10 flex-grow">
+
+    <!-- Cabeçalho -->
+    <header class="text-center sm:text-left mb-8">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-400 text-xs font-semibold tracking-wide uppercase mb-3">
+        <span class="w-2 h-2 rounded-full bg-sky-400 animate-pulse"></span>
+        Rede Estadual • Espírito Santo
+      </div>
+
+      <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight text-white">
+        Matemáticador de Faltas <span class="text-sky-400">• SEDU-ES</span>
+      </h1>
+
+      <p id="header-subtitle" class="mt-2 text-sm sm:text-base text-slate-400 leading-relaxed max-w-2xl">
+        Padrão de <strong class="text-slate-200 font-semibold">7 aulas/dia</strong>, mínimo de
+        <strong class="text-slate-200 font-semibold">75% de frequência</strong>
+        (limite de <strong class="text-amber-400 font-semibold">25% = 350 faltas</strong> em
+        <strong class="text-slate-200 font-semibold">1.400 aulas</strong> anuais).
+      </p>
+    </header>
+
+    <!-- Notificação Toast (substitui alert/confirm com feedback suave) -->
+    <div
+      id="toast-banner"
+      role="status"
+      aria-live="polite"
+      class="hidden mb-5 items-center justify-between gap-3 px-4 py-3 rounded-xl bg-slate-900 border border-sky-500/40 text-sky-200 text-sm shadow-lg transition-all"
+    >
+      <div class="flex items-center gap-2.5">
+        <svg class="w-5 h-5 text-sky-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span id="toast-message">Valores redefinidos com sucesso.</span>
+      </div>
+      <button
+        type="button"
+        id="toast-close"
+        aria-label="Fechar aviso"
+        class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+      >
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Seção de Entrada de Dados (Abas) -->
+    <section aria-label="Entrada de faltas" class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-xl mb-6">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
+        <!-- Navegação por Abas Acessível -->
+        <div
+          role="tablist"
+          aria-label="Modo de lançamento de faltas"
+          class="grid grid-cols-2 p-1 rounded-xl bg-slate-950 border border-slate-800 w-full sm:w-auto"
+        >
+          <button
+            type="button"
+            role="tab"
+            id="tab-trimestre"
+            aria-selected="true"
+            aria-controls="panel-trimestre"
+            class="tab-btn px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 bg-sky-600 text-white shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
+          >
+            Por Trimestre
+          </button>
+          <button
+            type="button"
+            role="tab"
+            id="tab-total"
+            aria-selected="false"
+            aria-controls="panel-total"
+            class="tab-btn px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 text-slate-400 hover:text-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
+          >
+            Total Já Somado
+          </button>
+        </div>
+
+        <!-- Botão Limpar Campos -->
+        <button
+          type="button"
+          id="btn-clear"
+          class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-rose-500/15 text-slate-300 hover:text-rose-300 border border-slate-700 hover:border-rose-500/40 text-sm font-medium transition-all duration-200 active:scale-[0.98]"
+        >
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+          Limpar Campos
+        </button>
+      </div>
+
+      <!-- Painel 1: Por Trimestre -->
+      <div
+        id="panel-trimestre"
+        role="tabpanel"
+        aria-labelledby="tab-trimestre"
+        class="space-y-4"
+      >
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <!-- 1º Trimestre -->
+          <div class="bg-slate-950/70 border border-slate-800/90 rounded-xl p-3.5 focus-within:border-sky-500/70 transition-colors">
+            <label for="input-trim1" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+              1º Trimestre
+            </label>
+            <input
+              type="number"
+              id="input-trim1"
+              min="0"
+              step="1"
+              inputmode="numeric"
+              placeholder="0"
+              class="w-full bg-transparent text-2xl font-bold text-white placeholder-slate-600 focus:outline-none"
+            />
+            <span class="block text-[11px] text-slate-500 mt-1">Aulas faltadas</span>
+          </div>
+
+          <!-- 2º Trimestre -->
+          <div class="bg-slate-950/70 border border-slate-800/90 rounded-xl p-3.5 focus-within:border-sky-500/70 transition-colors">
+            <label for="input-trim2" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+              2º Trimestre
+            </label>
+            <input
+              type="number"
+              id="input-trim2"
+              min="0"
+              step="1"
+              inputmode="numeric"
+              placeholder="0"
+              class="w-full bg-transparent text-2xl font-bold text-white placeholder-slate-600 focus:outline-none"
+            />
+            <span class="block text-[11px] text-slate-500 mt-1">Aulas faltadas</span>
+          </div>
+
+          <!-- 3º Trimestre -->
+          <div class="bg-slate-950/70 border border-slate-800/90 rounded-xl p-3.5 focus-within:border-sky-500/70 transition-colors">
+            <label for="input-trim3" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+              3º Trimestre
+            </label>
+            <input
+              type="number"
+              id="input-trim3"
+              min="0"
+              step="1"
+              inputmode="numeric"
+              placeholder="0"
+              class="w-full bg-transparent text-2xl font-bold text-white placeholder-slate-600 focus:outline-none"
+            />
+            <span class="block text-[11px] text-slate-500 mt-1">Aulas faltadas</span>
+          </div>
+        </div>
+
+        <!-- Subtotal Somado em Tempo Real -->
+        <div class="flex flex-wrap items-center justify-between gap-2 px-4 py-3 rounded-xl bg-slate-950 border border-slate-800/80">
+          <div class="flex items-center gap-2 text-sm text-slate-400">
+            <svg class="w-4 h-4 text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+            </svg>
+            <span>Subtotal somado dos 3 trimestres:</span>
+          </div>
+          <div class="text-base sm:text-lg font-bold text-sky-400">
+            <span id="subtotal-trimestres">0</span> <span class="text-xs font-medium text-slate-400">faltas</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Painel 2: Total Já Somado -->
+      <div
+        id="panel-total"
+        role="tabpanel"
+        aria-labelledby="tab-total"
+        class="hidden space-y-3"
+      >
+        <div class="bg-slate-950/70 border border-slate-800/90 rounded-xl p-4 focus-within:border-sky-500/70 transition-colors">
+          <label for="input-total-direto" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+            Total de Faltas Acumuladas
+          </label>
+          <input
+            type="number"
+            id="input-total-direto"
+            min="0"
+            step="1"
+            inputmode="numeric"
+            placeholder="0"
+            class="w-full bg-transparent text-3xl font-bold text-white placeholder-slate-600 focus:outline-none"
+          />
+          <p class="text-xs text-slate-500 mt-1.5">
+            Ideal para digitar o total acumulado diretamente do boletim escolar ou do portal SEGES.
+          </p>
+        </div>
+      </div>
+
+      <!-- Seção Recolhível: Configurações de Carga Horária -->
+      <details class="mt-5 pt-4 border-t border-slate-800/80 group">
+        <summary class="flex items-center justify-between cursor-pointer list-none text-sm font-medium text-slate-400 hover:text-slate-200 transition-colors select-none py-1">
+          <span class="inline-flex items-center gap-2">
+            <svg class="w-4 h-4 text-slate-400 group-open:text-sky-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            Configurações de Carga Horária
+          </span>
+          <svg class="w-4 h-4 text-slate-500 transition-transform duration-200 group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </summary>
+
+        <div class="mt-4 p-4 rounded-xl bg-slate-950/80 border border-slate-800 space-y-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label for="config-aulas-dia" class="block text-xs font-semibold text-slate-300 mb-1.5">
+                Aulas por dia
+              </label>
+              <input
+                type="number"
+                id="config-aulas-dia"
+                min="1"
+                max="20"
+                step="1"
+                value="7"
+                class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white font-semibold focus:outline-none focus:border-sky-500"
+              />
+              <span class="block text-[11px] text-slate-500 mt-1">Padrão SEDU-ES: 7 aulas diárias</span>
+            </div>
+
+            <div>
+              <label for="config-total-aulas" class="block text-xs font-semibold text-slate-300 mb-1.5">
+                Total de aulas no ano
+              </label>
+              <input
+                type="number"
+                id="config-total-aulas"
+                min="1"
+                step="1"
+                value="1400"
+                class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white font-semibold focus:outline-none focus:border-sky-500"
+              />
+              <span class="block text-[11px] text-slate-500 mt-1">Padrão: 1.400 aulas (200 dias letivos × 7)</span>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-800/80">
+            <span class="text-xs text-slate-400">
+              Limite calculado (25%): <strong id="config-limite-preview" class="text-slate-200">350 faltas</strong>
+            </span>
+            <button
+              type="button"
+              id="btn-reset-config"
+              class="text-xs font-semibold text-sky-400 hover:text-sky-300 underline underline-offset-4 py-1"
+            >
+              Restaurar padrão SEDU-ES (7 / 1400)
+            </button>
+          </div>
+        </div>
+      </details>
+    </section>
+
+    <!-- Barra de Progresso Visual da Frequência / Limite de Faltas -->
+    <section aria-label="Indicador de risco e frequência" class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-xl mb-6">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
         <div>
-            <input type="text" id="room-id" placeholder="Cole o ID aqui">
-            <button onclick="joinGame()">ENTRAR</button>
+          <h2 class="text-sm font-bold uppercase tracking-wider text-slate-300">
+            Termômetro de Frequência Escolar
+          </h2>
+          <p id="status-description" class="text-xs sm:text-sm text-slate-400 mt-0.5">
+            Você utilizou <strong class="text-white">0%</strong> do limite máximo permitido de faltas.
+          </p>
         </div>
-        <div id="status-msg" style="color: yellow; margin-top: 10px;"></div>
-    </div>
 
-    <div id="agent-select" class="fullscreen-ui">
-        <h2>ESCOLHA SEU AGENTE</h2>
-        <div style="display: flex;">
-            <div class="agent-card" onclick="pickAgent(1)">
-                <div id="jett-model" class="agent-model-container"></div>
-                <div class="agent-name">JETT (Dash)</div>
+        <!-- Badge de Status Dinâmico -->
+        <span
+          id="status-badge"
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 transition-colors duration-300"
+        >
+          <span id="status-dot" class="w-2 h-2 rounded-full bg-emerald-400"></span>
+          <span id="status-label">Seguro</span>
+        </span>
+      </div>
+
+      <!-- Barra de Progresso -->
+      <div class="w-full h-4 bg-slate-950 rounded-full overflow-hidden border border-slate-800 p-0.5">
+        <div
+          id="progress-bar-fill"
+          role="progressbar"
+          aria-valuenow="0"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          style="width: 0%"
+          class="h-full rounded-full bg-emerald-500 transition-all duration-500 ease-out"
+        ></div>
+      </div>
+
+      <!-- Legenda inferior da barra -->
+      <div class="flex flex-wrap items-center justify-between gap-2 mt-2.5 text-xs text-slate-400">
+        <span>0 faltas (100% frequência)</span>
+        <span id="progress-limit-text" class="font-medium text-slate-300">
+          Limite: 350 faltas (75% frequência)
+        </span>
+      </div>
+    </section>
+
+    <!-- Grade dos 4 Cards Principais de Resultado -->
+    <section aria-label="Resultados detalhados" class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+
+      <!-- Card 1: Total de Faltas -->
+      <article class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-lg flex flex-col justify-between">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Total de Faltas</p>
+            <p id="card-total-faltas" class="text-3xl sm:text-4xl font-extrabold text-white mt-2">0</p>
+          </div>
+          <div class="p-2.5 rounded-xl bg-sky-500/10 border border-sky-500/20 text-sky-400">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+          </div>
+        </div>
+        <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs sm:text-sm">
+          <span class="text-slate-400">Frequência atual:</span>
+          <span id="card-frequencia-pct" class="font-bold text-emerald-400">100,0%</span>
+        </div>
+      </article>
+
+      <!-- Card 2: Faltas Restantes -->
+      <article class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-lg flex flex-col justify-between">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Faltas Restantes</p>
+            <p id="card-faltas-restantes" class="text-3xl sm:text-4xl font-extrabold text-emerald-400 mt-2">350</p>
+          </div>
+          <div class="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+          </div>
+        </div>
+        <div class="mt-4 pt-3 border-t border-slate-800/80 text-xs sm:text-sm text-slate-400">
+          <span id="card-restantes-sub">Margem segura até atingir <strong class="text-slate-200">350 faltas</strong></span>
+        </div>
+      </article>
+
+      <!-- Card 3: Dias que ainda pode faltar -->
+      <article class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-lg flex flex-col justify-between">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Dias que Ainda Pode Faltar</p>
+            <div class="flex items-baseline gap-2 mt-2">
+              <p id="card-dias-pode" class="text-3xl sm:text-4xl font-extrabold text-white">50</p>
+              <span id="card-dias-pode-unit" class="text-sm font-semibold text-slate-400">dias inteiros</span>
             </div>
-            <div class="agent-card" onclick="pickAgent(2)">
-                <div id="sage-model" class="agent-model-container"></div>
-                <div class="agent-name">SAGE (Cura)</div>
-            </div>
+          </div>
+          <div class="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
         </div>
-    </div>
-
-    <div id="hud">
-        <div id="crosshair"></div>
-        <div id="hp-box">HP: 100</div>
-        <div id="ammo-box">
-            <span id="weapon-name">CLASSIC</span><br>
-            <span id="ammo-count">12 / ∞</span>
+        <div class="mt-4 pt-3 border-t border-slate-800/80 text-xs sm:text-sm text-slate-400">
+          <span id="card-aulas-avulsas">E mais <strong class="text-slate-200">0 aulas avulsas</strong> sem reprovar</span>
         </div>
-        
-        <!-- HUD de Habilidade -->
-        <div id="ability-hud">
-            <div id="ability-name"></div>
-            <button onclick="useAbility()">ATIVAR (E)</button>
-            <div id="ability-cooldown" style="margin-top: 5px; color: #00ff00;"></div>
-        </div>
-    </div>
-
-    <!-- Botões do Jogo -->
-    <div class="game-buttons">
-        <button onclick="toggleCheatMenu()">CHEATS (F1)</button>
-        <button onclick="toggleShop()">LOJA (B)</button>
-    </div>
-
-    <!-- Loja -->
-    <div id="shop">
-        <h2>MERCADO (B) - $<span id="money">800</span></h2>
-        <div class="shop-item" onclick="buyWeapon('pistol')">
-            <h3>CLASSIC</h3><p>$0</p>
-        </div>
-        <div class="shop-item" onclick="buyWeapon('rifle')">
-            <h3>VANDAL</h3><p>$2900</p>
-        </div>
-        <div class="shop-item" onclick="buyWeapon('sniper')">
-            <h3>OPERATOR</h3><p>$4700</p>
-        </div>
-        <br><br>
-        <button onclick="toggleShop()" style="width: 150px; padding: 5px;">FECHAR</button>
-    </div>
-
-    <!-- Menu de Cheats -->
-    <div id="cheat-menu">
-        <h2 style="color: #00ff00;">MENU DE CHEATS</h2>
-        <p style="color: #ff4655;">APENAS SINGLE PLAYER</p>
-        
-        <div class="cheat-item">
-            <input type="checkbox" id="cheat-infinite-money" onchange="toggleCheat('money')">
-            <label for="cheat-infinite-money">DINHEIRO INFINITO</label>
-        </div>
-        
-        <div class="cheat-item">
-            <input type="checkbox" id="cheat-infinite-hp" onchange="toggleCheat('hp')">
-            <label for="cheat-infinite-hp">VIDA INFINITA</label>
-        </div>
-        
-        <div class="cheat-item">
-            <input type="checkbox" id="cheat-infinite-ammo" onchange="toggleCheat('ammo')">
-            <label for="cheat-infinite-ammo">MUNIÇÃO INFINITA</label>
-        </div>
-        
-        <div class="cheat-item">
-            <input type="checkbox" id="cheat-no-recoil" onchange="toggleCheat('recoil')">
-            <label for="cheat-no-recoil">SEM RECOIL</label>
-        </div>
-        
-        <br>
-        <button onclick="toggleCheatMenu()">FECHAR</button>
-    </div>
-
-    <script type="module">
-        import * as THREE from 'three';
-        import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
-
-        // --- VARIÁVEIS DO SISTEMA ---
-        let camera, scene, renderer, controls;
-        let objects = []; // Colisores
-        let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false;
-        let velocity = new THREE.Vector3();
-        let direction = new THREE.Vector3();
-        let prevTime = performance.now();
-        
-        // Multiplayer
-        let peer, conn;
-        let isMultiplayer = false;
-        let isHost = false;
-        let remotePlayer; // Mesh do inimigo
-
-        // Estado do Jogo
-        let gameState = 'MENU'; // MENU, AGENT_SELECT, PLAYING
-        let playerStats = { hp: 100, money: 800, agent: 0 };
-        let currentWeapon = 'pistol';
-        let weaponGroup; // O grupo 3D que contem braços e arma
-        let recoilForce = 0;
-        
-        // Definição das Armas
-        const WEAPONS = {
-            'pistol': { name: "CLASSIC", dmg: 25, rate: 400, mag: 12, cost: 0, recoil: 0.05 },
-            'rifle':  { name: "VANDAL",  dmg: 40, rate: 150, mag: 25, cost: 2900, recoil: 0.1 },
-            'sniper': { name: "OPERATOR",dmg: 150, rate: 1200, mag: 5, cost: 4700, recoil: 0.3 }
-        };
-        let ammo = 12;
-        let lastShot = 0;
-        
-        // Sistema de IAs
-        let bots = [];
-        let botMeshes = [];
-        
-        // Sistema de Habilidade
-        let abilityCooldown = 0;
-        let abilityActive = false;
-        
-        // Sistema de Cheats
-        let cheats = {
-            infiniteMoney: false,
-            infiniteHP: false,
-            infiniteAmmo: false,
-            noRecoil: false
-        };
-        
-        // Sistema de Áudio
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        let gunSounds = {};
-
-        // --- INICIALIZAÇÃO GRAFICA ---
-        init();
-        animate();
-        initAgentModels();
-        initAudio();
-
-        function init() {
-            // Cena e Câmera
-            scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x87CEEB);
-            scene.fog = new THREE.Fog(0x87CEEB, 0, 500);
-
-            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            
-            // Renderizador
-            renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.shadowMap.enabled = true;
-            document.body.appendChild(renderer.domElement);
-
-            // Luzes
-            const ambient = new THREE.AmbientLight(0xffffff, 0.6);
-            scene.add(ambient);
-            const sun = new THREE.DirectionalLight(0xffffff, 0.8);
-            sun.position.set(50, 100, 50);
-            sun.castShadow = true;
-            sun.shadow.camera.left = -100; sun.shadow.camera.right = 100;
-            sun.shadow.camera.top = 100; sun.shadow.camera.bottom = -100;
-            scene.add(sun);
-
-            // Controles
-            controls = new PointerLockControls(camera, document.body);
-            
-            // Eventos de Teclado
-            document.addEventListener('keydown', onKeyDown);
-            document.addEventListener('keyup', onKeyUp);
-            document.addEventListener('mousedown', shoot);
-            
-            // Setup Inicial da Arma
-            weaponGroup = new THREE.Group();
-            camera.add(weaponGroup);
-            scene.add(camera);
-
-            createMap();
-        }
-
-        // --- INICIALIZAR MODELOS DOS AGENTES NA SELEÇÃO ---
-        function initAgentModels() {
-            // Renderizadores para os modelos na seleção
-            const jettRenderer = new THREE.WebGLRenderer({ alpha: true });
-            jettRenderer.setSize(200, 300);
-            document.getElementById('jett-model').appendChild(jettRenderer.domElement);
-            
-            const sageRenderer = new THREE.WebGLRenderer({ alpha: true });
-            sageRenderer.setSize(200, 300);
-            document.getElementById('sage-model').appendChild(sageRenderer.domElement);
-            
-            // Cena e câmera para Jett
-            const jettScene = new THREE.Scene();
-            const jettCamera = new THREE.PerspectiveCamera(45, 200/300, 0.1, 1000);
-            jettCamera.position.set(0, 0, 5);
-            
-            // Modelo Jett (estilizado)
-            const jettBody = new THREE.Mesh(
-                new THREE.CapsuleGeometry(0.8, 2, 4, 8),
-                new THREE.MeshStandardMaterial({ color: 0x4a4a4a })
-            );
-            jettBody.position.y = 0;
-            
-            const jettHair = new THREE.Mesh(
-                new THREE.BoxGeometry(1.2, 0.5, 0.8),
-                new THREE.MeshStandardMaterial({ color: 0x000000 })
-            );
-            jettHair.position.set(0, 1.2, 0);
-            
-            const jettFace = new THREE.Mesh(
-                new THREE.SphereGeometry(0.3, 8, 8),
-                new THREE.MeshStandardMaterial({ color: 0xffccaa })
-            );
-            jettFace.position.set(0, 0.7, 0.5);
-            
-            const jettKnife = new THREE.Mesh(
-                new THREE.ConeGeometry(0.1, 1, 4),
-                new THREE.MeshStandardMaterial({ color: 0xaaaaaa })
-            );
-            jettKnife.rotation.z = Math.PI;
-            jettKnife.position.set(0.8, -0.5, 0);
-            
-            jettScene.add(jettBody, jettHair, jettFace, jettKnife);
-            jettScene.add(new THREE.AmbientLight(0xffffff, 0.5));
-            
-            // Cena e câmera para Sage
-            const sageScene = new THREE.Scene();
-            const sageCamera = new THREE.PerspectiveCamera(45, 200/300, 0.1, 1000);
-            sageCamera.position.set(0, 0, 5);
-            
-            // Modelo Sage (estilizado)
-            const sageBody = new THREE.Mesh(
-                new THREE.CapsuleGeometry(0.8, 2, 4, 8),
-                new THREE.MeshStandardMaterial({ color: 0x00aa00 })
-            );
-            sageBody.position.y = 0;
-            
-            const sageHair = new THREE.Mesh(
-                new THREE.BoxGeometry(1.2, 0.5, 0.8),
-                new THREE.MeshStandardMaterial({ color: 0xffffff })
-            );
-            sageHair.position.set(0, 1.2, 0);
-            
-            const sageFace = new THREE.Mesh(
-                new THREE.SphereGeometry(0.3, 8, 8),
-                new THREE.MeshStandardMaterial({ color: 0xffccaa })
-            );
-            sageFace.position.set(0, 0.7, 0.5);
-            
-            const sageOrb = new THREE.Mesh(
-                new THREE.SphereGeometry(0.4, 16, 16),
-                new THREE.MeshStandardMaterial({ color: 0x00ffff, transparent: true, opacity: 0.7 })
-            );
-            sageOrb.position.set(-0.8, 0, 0);
-            
-            sageScene.add(sageBody, sageHair, sageFace, sageOrb);
-            sageScene.add(new THREE.AmbientLight(0xffffff, 0.5));
-            
-            // Animar os modelos
-            function animateAgentModels() {
-                requestAnimationFrame(animateAgentModels);
-                
-                jettCamera.lookAt(0, 0, 0);
-                sageCamera.lookAt(0, 0, 0);
-                
-                // Rotação suave
-                jettScene.rotation.y += 0.01;
-                sageScene.rotation.y += 0.01;
-                
-                // Flutuação do orb da Sage
-                sageOrb.position.y = Math.sin(Date.now() * 0.002) * 0.3;
-                
-                jettRenderer.render(jettScene, jettCamera);
-                sageRenderer.render(sageScene, sageCamera);
-            }
-            animateAgentModels();
-        }
-
-        // --- INICIALIZAR SONS ---
-        function initAudio() {
-            // Criar sons de tiro básicos
-            function createGunSound(frequency, duration) {
-                return function() {
-                    if (audioContext.state === 'suspended') {
-                        audioContext.resume();
-                    }
-                    
-                    const oscillator = audioContext.createOscillator();
-                    const gainNode = audioContext.createGain();
-                    
-                    oscillator.connect(gainNode);
-                    gainNode.connect(audioContext.destination);
-                    
-                    oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
-                    oscillator.type = 'sawtooth';
-                    
-                    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
-                    
-                    oscillator.start();
-                    oscillator.stop(audioContext.currentTime + duration);
-                };
-            }
-            
-            gunSounds.pistol = createGunSound(800, 0.1);
-            gunSounds.rifle = createGunSound(600, 0.15);
-            gunSounds.sniper = createGunSound(300, 0.3);
-        }
-
-        // --- GERAÇÃO DE MAPA E OBJETOS 3D ---
-        function createMap() {
-            // 1. Chão Gigante
-            const floorGeo = new THREE.PlaneGeometry(400, 400);
-            const floorMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.8 });
-            const floor = new THREE.Mesh(floorGeo, floorMat);
-            floor.rotation.x = -Math.PI / 2;
-            floor.receiveShadow = true;
-            scene.add(floor);
-
-            // 2. Paredes de Limite
-            const wallMat = new THREE.MeshStandardMaterial({ color: 0x34495e });
-            const wallHeight = 50;
-            const wallGeo = new THREE.BoxGeometry(400, wallHeight, 10);
-            
-            createWall(0, wallHeight/2, -200, 400, wallHeight, 10, wallMat);
-            createWall(0, wallHeight/2, 200, 400, wallHeight, 10, wallMat);
-            createWall(-200, wallHeight/2, 0, 10, wallHeight, 400, wallMat);
-            createWall(200, wallHeight/2, 0, 10, wallHeight, 400, wallMat);
-
-            // 3. Elementos do Mapa
-            for(let i=0; i<20; i++) {
-                let s = 10 + Math.random() * 20;
-                let x = (Math.random() - 0.5) * 300;
-                let z = (Math.random() - 0.5) * 300;
-                
-                if(Math.abs(x) < 20 && Math.abs(z) < 20) continue; 
-                
-                const box = new THREE.Mesh(
-                    new THREE.BoxGeometry(s, s, s), 
-                    new THREE.MeshStandardMaterial({ color: Math.random() > 0.5 ? 0xff4655 : 0x00ffff })
-                );
-                box.position.set(x, s/2, z);
-                box.castShadow = true;
-                box.receiveShadow = true;
-                scene.add(box);
-                objects.push(box);
-            }
-        }
-
-        function createWall(x, y, z, w, h, d, mat) {
-            const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
-            mesh.position.set(x, y, z);
-            mesh.receiveShadow = true;
-            mesh.castShadow = true;
-            scene.add(mesh);
-            objects.push(mesh);
-        }
-
-        // --- SISTEMA DE BOTS (IA) ---
-        function createBots(count) {
-            for(let i = 0; i < count; i++) {
-                const bot = {
-                    mesh: new THREE.Mesh(
-                        new THREE.CapsuleGeometry(1.5, 4, 4, 8),
-                        new THREE.MeshStandardMaterial({ color: 0xff0000 })
-                    ),
-                    hp: 100,
-                    targetPos: new THREE.Vector3(
-                        (Math.random() - 0.5) * 200,
-                        8,
-                        (Math.random() - 0.5) * 200
-                    ),
-                    state: 'patrol', // patrol, chase, attack
-                    lastShot: 0,
-                    cooldown: 1000 + Math.random() * 1000
-                };
-                
-                bot.mesh.position.copy(bot.targetPos);
-                bot.mesh.userData.isBot = true;
-                bot.mesh.userData.hp = 100;
-                scene.add(bot.mesh);
-                botMeshes.push(bot.mesh);
-                bots.push(bot);
-            }
-        }
-
-        function updateBots(delta) {
-            bots.forEach(bot => {
-                const playerPos = camera.position.clone();
-                const botPos = bot.mesh.position;
-                const distance = playerPos.distanceTo(botPos);
-                
-                // Lógica de estados
-                if (distance < 30) {
-                    bot.state = 'chase';
-                    if (distance < 15) {
-                        bot.state = 'attack';
-                    }
-                } else {
-                    bot.state = 'patrol';
-                }
-                
-                // Ações baseadas no estado
-                switch(bot.state) {
-                    case 'patrol':
-                        // Patrulha entre pontos
-                        if (botPos.distanceTo(bot.targetPos) < 5) {
-                            bot.targetPos.set(
-                                (Math.random() - 0.5) * 200,
-                                8,
-                                (Math.random() - 0.5) * 200
-                            );
-                        }
-                        break;
-                        
-                    case 'chase':
-                        // Persegue o jogador
-                        bot.targetPos.copy(playerPos);
-                        break;
-                        
-                    case 'attack':
-                        // Atira no jogador
-                        if (Date.now() - bot.lastShot > bot.cooldown) {
-                            botShoot(bot);
-                            bot.lastShot = Date.now();
-                        }
-                        break;
-                }
-                
-                // Movimento do bot
-                const direction = new THREE.Vector3()
-                    .subVectors(bot.targetPos, botPos)
-                    .normalize();
-                
-                if (bot.state !== 'attack') {
-                    bot.mesh.position.add(direction.multiplyScalar(5 * delta));
-                }
-                
-                // Olha na direção do movimento
-                if (direction.length() > 0.1) {
-                    bot.mesh.lookAt(
-                        bot.mesh.position.x + direction.x,
-                        bot.mesh.position.y,
-                        bot.mesh.position.z + direction.z
-                    );
-                }
-            });
-        }
-
-        function botShoot(bot) {
-            const ray = new THREE.Raycaster();
-            const botPos = bot.mesh.position.clone();
-            botPos.y += 2; // Altura dos "olhos" do bot
-            
-            const playerPos = camera.position.clone();
-            const direction = new THREE.Vector3()
-                .subVectors(playerPos, botPos)
-                .normalize();
-            
-            ray.set(botPos, direction);
-            const intersects = ray.intersectObjects([camera]);
-            
-            if (intersects.length > 0) {
-                // Acertou o jogador
-                if (!cheats.infiniteHP) {
-                    playerStats.hp -= 10;
-                    updateHUD();
-                    
-                    if (playerStats.hp <= 0) {
-                        gameOver();
-                    }
-                }
-                
-                // Efeito visual de hit
-                const hitEffect = document.createElement('div');
-                hitEffect.style.cssText = `
-                    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-                    background: rgba(255, 0, 0, 0.3); z-index: 100; pointer-events: none;
-                    animation: hitFlash 0.3s;
-                `;
-                document.body.appendChild(hitEffect);
-                setTimeout(() => hitEffect.remove(), 300);
-            }
-        }
-
-        // --- SISTEMA DE ARMAS 3D PROCEDURAL ---
-        function createWeaponModel(type) {
-            while(weaponGroup.children.length > 0){ 
-                weaponGroup.remove(weaponGroup.children[0]); 
-            }
-
-            const gunMat = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.8, roughness: 0.2 });
-            const detailMat = new THREE.MeshStandardMaterial({ color: 0xff4655 });
-            const armMat = new THREE.MeshStandardMaterial({ color: 0xffccaa });
-
-            const gunRoot = new THREE.Group();
-
-            if (type === 'pistol') {
-                const body = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.15, 0.4), gunMat);
-                const barrel = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.4), detailMat);
-                barrel.position.set(0, 0.05, -0.2);
-                gunRoot.add(body, barrel);
-                gunRoot.position.set(0.3, -0.3, -0.5);
-            } 
-            else if (type === 'rifle') {
-                const body = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.2, 0.6), gunMat);
-                const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.6), gunMat);
-                barrel.rotation.x = Math.PI / 2;
-                barrel.position.set(0, 0.05, -0.5);
-                const mag = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.2, 0.15), detailMat);
-                mag.position.set(0, -0.15, 0.1);
-                gunRoot.add(body, barrel, mag);
-                gunRoot.position.set(0.3, -0.3, -0.6);
-            }
-            else if (type === 'sniper') {
-                const body = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.2, 0.5), gunMat);
-                const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.2), gunMat);
-                barrel.rotation.x = Math.PI / 2;
-                barrel.position.set(0, 0, -0.8);
-                const scope = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.05, 0.4), detailMat);
-                scope.rotation.x = Math.PI / 2;
-                scope.position.set(0, 0.15, -0.1);
-                gunRoot.add(body, barrel, scope);
-                gunRoot.position.set(0.3, -0.35, -0.7);
-            }
-
-            // Braços 3D
-            const rightArm = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 1.5), armMat);
-            rightArm.rotation.z = -0.2;
-            rightArm.rotation.x = 1.2;
-            rightArm.position.set(0.2, -0.8, 0.5);
-            
-            const leftArm = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 1.5), armMat);
-            leftArm.rotation.z = 0.5;
-            leftArm.rotation.x = 1.0;
-            leftArm.position.set(-0.4, -0.8, 0.2);
-
-            gunRoot.add(rightArm, leftArm);
-            weaponGroup.add(gunRoot);
-        }
-
-        // --- LÓGICA DO JOGO ---
-        window.startGame = (multi) => {
-            isMultiplayer = multi;
-            document.getElementById('main-menu').classList.add('hidden');
-            
-            gameState = 'AGENT_SELECT';
-            document.getElementById('agent-select').style.display = 'flex';
-            
-            camera.position.set(0, 50, 0);
-            camera.lookAt(0, 0, 0);
-            
-            // Criar bots apenas no single player
-            if (!multi) {
-                createBots(5); // 5 bots
-            }
-        };
-
-        window.pickAgent = (id) => {
-            playerStats.agent = id;
-            document.getElementById('agent-select').style.display = 'none';
-            document.getElementById('hud').style.display = 'block';
-            
-            // Mostrar HUD de habilidade
-            const abilityHud = document.getElementById('ability-hud');
-            abilityHud.style.display = 'block';
-            
-            if (id === 1) {
-                document.getElementById('ability-name').innerHTML = 'JETT<br><span style="font-size: 16px;">DASH (E)</span>';
-                abilityHud.style.borderColor = '#4a4a4a';
-            } else {
-                document.getElementById('ability-name').innerHTML = 'SAGE<br><span style="font-size: 16px;">CURAR (E)</span>';
-                abilityHud.style.borderColor = '#00aa00';
-            }
-            
-            gameState = 'PLAYING';
-            camera.position.set(0, 10, 50);
-            
-            createWeaponModel('pistol');
-            updateHUD();
-
-            controls.lock();
-        };
-
-        // Inputs de Movimento
-        function onKeyDown(event) {
-            switch(event.code) {
-                case 'KeyW': moveForward = true; break;
-                case 'KeyA': moveLeft = true; break;
-                case 'KeyS': moveBackward = true; break;
-                case 'KeyD': moveRight = true; break;
-                case 'Space': jump(); break; // Pulo
-                case 'KeyB': toggleShop(); break;
-                case 'KeyE': useAbility(); break;
-                case 'KeyR': reload(); break;
-                case 'F1': toggleCheatMenu(); break;
-            }
-        }
-        
-        function onKeyUp(event) {
-            switch(event.code) {
-                case 'KeyW': moveForward = false; break;
-                case 'KeyA': moveLeft = false; break;
-                case 'KeyS': moveBackward = false; break;
-                case 'KeyD': moveRight = false; break;
-            }
-        }
-
-        // Sistema de Pulo
-        function jump() {
-            if (canJump && gameState === 'PLAYING') {
-                velocity.y = 15;
-                canJump = false;
-                
-                // Som de pulo
-                if (audioContext.state === 'suspended') audioContext.resume();
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-                oscillator.frequency.setValueAtTime(300, audioContext.currentTime);
-                gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
-                oscillator.start();
-                oscillator.stop(audioContext.currentTime + 0.2);
-            }
-        }
-
-        // Tiro
-        function shoot() {
-            if(gameState !== 'PLAYING' || !controls.isLocked) return;
-            const w = WEAPONS[currentWeapon];
-            
-            if(Date.now() - lastShot < w.rate) return;
-            if(ammo <= 0 && !cheats.infiniteAmmo) return;
-
-            lastShot = Date.now();
-            if (!cheats.infiniteAmmo) {
-                ammo--;
-            }
-            updateHUD();
-
-            // Tocar som da arma
-            if (gunSounds[currentWeapon]) {
-                gunSounds[currentWeapon]();
-            }
-
-            // Recoil (a menos que o cheat esteja ativo)
-            if (!cheats.noRecoil) {
-                recoilForce += 0.1;
-                weaponGroup.position.z += 0.2;
-                weaponGroup.rotation.x += w.recoil;
-            }
-
-            // Hitscan
-            const ray = new THREE.Raycaster();
-            ray.setFromCamera(new THREE.Vector2(0,0), camera);
-            const intersects = ray.intersectObjects(scene.children);
-
-            for (let i=0; i < intersects.length; i++) {
-                const obj = intersects[i].object;
-                
-                // Verifica se é um bot
-                if (obj.userData.isBot) {
-                    obj.userData.hp -= w.dmg;
-                    
-                    if (obj.userData.hp <= 0) {
-                        // Remove bot
-                        scene.remove(obj);
-                        const index = botMeshes.indexOf(obj);
-                        if (index > -1) {
-                            botMeshes.splice(index, 1);
-                            bots.splice(index, 1);
-                        }
-                        
-                        // Recompensa por matar bot
-                        playerStats.money += 300;
-                        updateHUD();
-                    }
-                    
-                    // Efeito de hit no bot
-                    const hitMat = new THREE.MeshStandardMaterial({ color: 0xffff00 });
-                    obj.material = hitMat;
-                    setTimeout(() => {
-                        obj.material = new THREE.MeshStandardMaterial({ color: 0xff0000 });
-                    }, 100);
-                    
-                    break;
-                }
-                
-                // Acertou parede
-                if (objects.includes(obj)) {
-                    createBulletHole(intersects[i].point, intersects[i].face.normal);
-                    break;
-                }
-                
-                // Multiplayer
-                if (obj.userData.isPlayer && isMultiplayer) {
-                    conn.send({type: 'HIT', dmg: w.dmg});
-                    break;
-                }
-            }
-        }
-
-        function reload() {
-            ammo = WEAPONS[currentWeapon].mag;
-            updateHUD();
-        }
-
-        function createBulletHole(pos, normal) {
-            const geo = new THREE.CircleGeometry(0.2, 8);
-            const mat = new THREE.MeshBasicMaterial({ color: 0x000000 });
-            const hole = new THREE.Mesh(geo, mat);
-            hole.position.copy(pos);
-            hole.position.add(normal.multiplyScalar(0.01));
-            hole.lookAt(pos.clone().add(normal));
-            scene.add(hole);
-            setTimeout(() => scene.remove(hole), 5000);
-        }
-
-        // Habilidades
-        window.useAbility = () => {
-            if (abilityCooldown > 0 || abilityActive) return;
-            
-            if (playerStats.agent === 1) { // Jett Dash
-                velocity.add(controls.getDirection(new THREE.Vector3()).multiplyScalar(100));
-                abilityActive = true;
-                
-                // Efeito visual do dash
-                const dashEffect = new THREE.Mesh(
-                    new THREE.SphereGeometry(2, 8, 8),
-                    new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.5 })
-                );
-                dashEffect.position.copy(camera.position);
-                scene.add(dashEffect);
-                setTimeout(() => scene.remove(dashEffect), 500);
-            } else { // Sage Heal
-                playerStats.hp = Math.min(100, playerStats.hp + 50);
-                updateHUD();
-                
-                // Efeito visual de cura
-                const healEffect = new THREE.Mesh(
-                    new THREE.SphereGeometry(3, 16, 16),
-                    new THREE.MeshBasicMaterial({ color: 0x00ff00, transparent: true, opacity: 0.3 })
-                );
-                healEffect.position.copy(camera.position);
-                scene.add(healEffect);
-                setTimeout(() => scene.remove(healEffect), 1000);
-            }
-            
-            abilityCooldown = 10; // 10 segundos de cooldown
-            updateAbilityCooldown();
-        };
-
-        function updateAbilityCooldown() {
-            if (abilityCooldown > 0) {
-                document.getElementById('ability-cooldown').textContent = `Cooldown: ${abilityCooldown}s`;
-                abilityCooldown--;
-                setTimeout(updateAbilityCooldown, 1000);
-            } else {
-                document.getElementById('ability-cooldown').textContent = 'Pronta!';
-                abilityActive = false;
-            }
-        }
-
-        // Loja
-        window.toggleShop = () => {
-            const shop = document.getElementById('shop');
-            if(shop.style.display === 'block') {
-                shop.style.display = 'none';
-                controls.lock();
-            } else {
-                shop.style.display = 'block';
-                controls.unlock();
-            }
-        };
-
-        window.buyWeapon = (type) => {
-            const w = WEAPONS[type];
-            if (cheats.infiniteMoney || playerStats.money >= w.cost) {
-                if (!cheats.infiniteMoney) {
-                    playerStats.money -= w.cost;
-                }
-                currentWeapon = type;
-                ammo = w.mag;
-                createWeaponModel(type);
-                updateHUD();
-                toggleShop();
-            }
-        };
-
-        function updateHUD() {
-            document.getElementById('hp-box').innerText = "HP: " + playerStats.hp;
-            document.getElementById('weapon-name').innerText = WEAPONS[currentWeapon].name;
-            document.getElementById('ammo-count').innerText = ammo + " / ∞";
-            document.getElementById('money').innerText = playerStats.money;
-        }
-
-        // Sistema de Cheats
-        window.toggleCheatMenu = () => {
-            if (isMultiplayer) {
-                alert("Cheats disponíveis apenas no Single Player!");
-                return;
-            }
-            
-            const menu = document.getElementById('cheat-menu');
-            if(menu.style.display === 'block') {
-                menu.style.display = 'none';
-                if (gameState === 'PLAYING') controls.lock();
-            } else {
-                menu.style.display = 'block';
-                controls.unlock();
-            }
-        };
-
-        window.toggleCheat = (type) => {
-            switch(type) {
-                case 'money':
-                    cheats.infiniteMoney = !cheats.infiniteMoney;
-                    if (cheats.infiniteMoney) playerStats.money = 99999;
-                    updateHUD();
-                    break;
-                case 'hp':
-                    cheats.infiniteHP = !cheats.infiniteHP;
-                    if (cheats.infiniteHP) playerStats.hp = 99999;
-                    updateHUD();
-                    break;
-                case 'ammo':
-                    cheats.infiniteAmmo = !cheats.infiniteAmmo;
-                    if (cheats.infiniteAmmo) ammo = 999;
-                    updateHUD();
-                    break;
-                case 'recoil':
-                    cheats.noRecoil = !cheats.noRecoil;
-                    break;
-            }
-        };
-
-        function gameOver() {
-            alert("GAME OVER!");
-            location.reload();
-        }
-
-        // --- MULTIPLAYER P2P ---
-        window.createHost = () => {
-            peer = new Peer();
-            document.getElementById('status-msg').innerText = "Gerando Sala...";
-            peer.on('open', id => {
-                document.getElementById('status-msg').innerHTML = "ID DA SALA: <br><span style='font-size:30px; color:white; background:black; padding:5px'>" + id + "</span><br>Mande para o amigo.";
-                isHost = true;
-            });
-            peer.on('connection', c => {
-                conn = c;
-                setupConnection();
-                startGame(true);
-            });
-        };
-
-        window.joinGame = () => {
-            const id = document.getElementById('room-id').value;
-            peer = new Peer();
-            peer.on('open', myId => {
-                conn = peer.connect(id);
-                setupConnection();
-                startGame(true);
-            });
-        };
-
-        function setupConnection() {
-            const mat = new THREE.MeshStandardMaterial({ color: 0xff0000 });
-            const geo = new THREE.CapsuleGeometry(1.5, 4, 4, 8);
-            remotePlayer = new THREE.Mesh(geo, mat);
-            remotePlayer.position.set(0, -100, 0);
-            remotePlayer.userData.isPlayer = true;
-            scene.add(remotePlayer);
-
-            conn.on('data', data => {
-                if(data.type === 'MOVE') {
-                    remotePlayer.position.set(data.x, data.y, data.z);
-                }
-                if(data.type === 'HIT') {
-                    if (!cheats.infiniteHP) {
-                        playerStats.hp -= data.dmg;
-                        updateHUD();
-                        if(playerStats.hp <= 0) {
-                            gameOver();
-                        }
-                    }
-                }
-            });
-        }
-
-        // --- LOOP PRINCIPAL ---
-        let canJump = true;
-
-        function animate() {
-            requestAnimationFrame(animate);
-
-            if (gameState === 'PLAYING') {
-                const time = performance.now();
-                const delta = (time - prevTime) / 1000;
-                prevTime = time;
-
-                // Física de Movimento
-                velocity.x -= velocity.x * 10.0 * delta;
-                velocity.z -= velocity.z * 10.0 * delta;
-                velocity.y -= 9.8 * 10.0 * delta;
-
-                direction.z = Number(moveForward) - Number(moveBackward);
-                direction.x = Number(moveRight) - Number(moveLeft);
-                direction.normalize();
-
-                if (moveForward || moveBackward) velocity.z -= direction.z * 400.0 * delta;
-                if (moveLeft || moveRight) velocity.x -= direction.x * 400.0 * delta;
-
-                controls.moveRight(-velocity.x * delta);
-                controls.moveForward(-velocity.z * delta);
-                controls.getObject().position.y += (velocity.y * delta);
-
-                // Colisão com o Chão
-                if (controls.getObject().position.y < 8) {
-                    velocity.y = 0;
-                    controls.getObject().position.y = 8;
-                    canJump = true;
-                }
-
-                // Animação da Arma
-                if (weaponGroup) {
-                    weaponGroup.position.z += (0 - weaponGroup.position.z) * 0.1;
-                    weaponGroup.rotation.x += (0 - weaponGroup.rotation.x) * 0.1;
-                    
-                    if(moveForward || moveBackward || moveLeft || moveRight) {
-                        weaponGroup.position.x = Math.sin(time * 0.01) * 0.02;
-                        weaponGroup.position.y = Math.cos(time * 0.02) * 0.02;
-                    }
-                }
-
-                // Atualizar Bots (single player)
-                if (!isMultiplayer) {
-                    updateBots(delta);
-                }
-
-                // Multiplayer
-                if (isMultiplayer && conn && conn.open) {
-                    const pos = controls.getObject().position;
-                    conn.send({type: 'MOVE', x: pos.x, y: pos.y, z: pos.z});
-                }
-            }
-
-            renderer.render(scene, camera);
-        }
-
-        window.onresize = () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        };
-        
-        // CSS para animação de hit
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes hitFlash {
-                0% { opacity: 0.5; }
-                100% { opacity: 0; }
-            }
-        `;
-        document.head.appendChild(style);
-    </script>
-</body>
-</html>
+      </article>
+
+      <!-- Card 4: Dias de falta para reprovar -->
+      <article id="card-reprovar-box" class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-lg flex flex-col justify-between transition-colors duration-300">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <p class="text-xs fo
