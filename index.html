@@ -1,398 +1,656 @@
 <!DOCTYPE html>
-<html lang="pt-BR" class="dark">
+<html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Matemáticador de Faltas • SEDU-ES</title>
+  <title>Calculadora de Faltas — SEDU-ES</title>
+  <style>
+    :root {
+      --bg: #0b1120;
+      --surface: #111827;
+      --surface-2: #1f2937;
+      --border: #374151;
+      --text: #f3f4f6;
+      --muted: #9ca3af;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --ok: #10b981;
+      --ok-bg: rgba(16, 185, 129, 0.15);
+      --warn: #f59e0b;
+      --warn-bg: rgba(245, 158, 11, 0.15);
+      --danger: #ef4444;
+      --danger-bg: rgba(239, 68, 68, 0.15);
+      --radius: 14px;
+    }
 
-  <!-- Fonte Inter (Google Fonts) -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
-          },
-        },
-      },
-    };
-  </script>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 24px 16px 48px;
+      line-height: 1.5;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 680px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    header {
+      text-align: center;
+      padding: 8px 0 4px;
+    }
+
+    .badge-sedu {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #60a5fa;
+      background: rgba(59, 130, 246, 0.15);
+      border: 1px solid rgba(59, 130, 246, 0.35);
+      padding: 4px 12px;
+      border-radius: 999px;
+      margin-bottom: 10px;
+    }
+
+    h1 {
+      font-size: 1.65rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 0.92rem;
+      margin-top: 4px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+    }
+
+    /* Abas */
+    .tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      background: var(--bg);
+      padding: 6px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      margin-bottom: 18px;
+    }
+
+    .tab-btn {
+      appearance: none;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-size: 0.92rem;
+      font-weight: 600;
+      padding: 11px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.18s ease;
+    }
+
+    .tab-btn:hover {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .tab-btn.active {
+      background: var(--primary);
+      color: #ffffff;
+      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+    }
+
+    .tab-panel {
+      display: none;
+    }
+
+    .tab-panel.active {
+      display: block;
+    }
+
+    /* Inputs */
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    @media (max-width: 520px) {
+      .grid-3 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    label {
+      font-size: 0.84rem;
+      font-weight: 600;
+      color: #d1d5db;
+    }
+
+    input[type="number"] {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 1.15rem;
+      font-weight: 700;
+      padding: 12px 14px;
+      border-radius: 10px;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    input[type="number"]:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.22);
+    }
+
+    .helper-bar {
+      margin-top: 14px;
+      padding: 10px 14px;
+      background: var(--surface-2);
+      border-radius: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.9rem;
+    }
+
+    .helper-bar strong {
+      color: #60a5fa;
+      font-size: 1.05rem;
+    }
+
+    /* Status & Barra de Progresso */
+    .status-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .status-pill {
+      font-size: 0.82rem;
+      font-weight: 700;
+      padding: 5px 12px;
+      border-radius: 999px;
+      background: var(--ok-bg);
+      color: var(--ok);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+    }
+
+    .status-pill.warn {
+      background: var(--warn-bg);
+      color: var(--warn);
+      border-color: rgba(245, 158, 11, 0.35);
+    }
+
+    .status-pill.danger {
+      background: var(--danger-bg);
+      color: var(--danger);
+      border-color: rgba(239, 68, 68, 0.35);
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 12px;
+      background: var(--bg);
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      margin-bottom: 8px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--ok);
+      transition: width 0.25s ease, background-color 0.25s ease;
+    }
+
+    .progress-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+
+    /* Resultados */
+    .results-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    @media (max-width: 520px) {
+      .results-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .stat-box {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+    }
+
+    .stat-box.highlight-ok {
+      border-color: rgba(16, 185, 129, 0.45);
+    }
+
+    .stat-box.highlight-danger {
+      border-color: rgba(239, 68, 68, 0.45);
+    }
+
+    .stat-label {
+      font-size: 0.8rem;
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .stat-value {
+      font-size: 1.55rem;
+      font-weight: 800;
+      margin-top: 4px;
+      color: var(--text);
+    }
+
+    .stat-sub {
+      font-size: 0.83rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    /* Ações e Configurações */
+    .actions-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+
+    .btn-secondary {
+      appearance: none;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 9px 14px;
+      border-radius: 9px;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+
+    .btn-secondary:hover {
+      background: #2d3748;
+    }
+
+    .btn-danger-outline {
+      appearance: none;
+      background: transparent;
+      border: 1px solid rgba(239, 68, 68, 0.45);
+      color: #fca5a5;
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 9px 14px;
+      border-radius: 9px;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+
+    .btn-danger-outline:hover {
+      background: rgba(239, 68, 68, 0.15);
+    }
+
+    .config-panel {
+      display: none;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+    }
+
+    .config-panel.open {
+      display: block;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    footer {
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+  </style>
 </head>
-<body class="min-h-screen bg-slate-950 text-slate-100 font-sans antialiased selection:bg-sky-500/30 selection:text-sky-200 flex flex-col justify-between">
-
-  <!-- Faixa decorativa superior inspirada nas cores do Espírito Santo -->
-  <div class="h-1.5 w-full bg-gradient-to-r from-sky-500 via-slate-100 to-rose-500"></div>
-
-  <!-- Container Principal -->
-  <main class="w-full max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-10 flex-grow">
-
-    <!-- Cabeçalho -->
-    <header class="text-center sm:text-left mb-8">
-      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-400 text-xs font-semibold tracking-wide uppercase mb-3">
-        <span class="w-2 h-2 rounded-full bg-sky-400 animate-pulse"></span>
-        Rede Estadual • Espírito Santo
-      </div>
-
-      <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight text-white">
-        Matemáticador de Faltas <span class="text-sky-400">• SEDU-ES</span>
-      </h1>
-
-      <p id="header-subtitle" class="mt-2 text-sm sm:text-base text-slate-400 leading-relaxed max-w-2xl">
-        Padrão de <strong class="text-slate-200 font-semibold">7 aulas/dia</strong>, mínimo de
-        <strong class="text-slate-200 font-semibold">75% de frequência</strong>
-        (limite de <strong class="text-amber-400 font-semibold">25% = 350 faltas</strong> em
-        <strong class="text-slate-200 font-semibold">1.400 aulas</strong> anuais).
-      </p>
+<body>
+  <main class="app">
+    <header>
+      <span class="badge-sedu">SEDU-ES • Controle de Frequência</span>
+      <h1>Calculadora de Faltas Escolares</h1>
+      <p class="subtitle">Mínimo de 75% de presença (limite de 25% de faltas = 350 aulas no ano)</p>
     </header>
 
-    <!-- Notificação Toast (substitui alert/confirm com feedback suave) -->
-    <div
-      id="toast-banner"
-      role="status"
-      aria-live="polite"
-      class="hidden mb-5 items-center justify-between gap-3 px-4 py-3 rounded-xl bg-slate-900 border border-sky-500/40 text-sky-200 text-sm shadow-lg transition-all"
-    >
-      <div class="flex items-center gap-2.5">
-        <svg class="w-5 h-5 text-sky-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <span id="toast-message">Valores redefinidos com sucesso.</span>
-      </div>
-      <button
-        type="button"
-        id="toast-close"
-        aria-label="Fechar aviso"
-        class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-      >
-        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
-    </div>
-
-    <!-- Seção de Entrada de Dados (Abas) -->
-    <section aria-label="Entrada de faltas" class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-xl mb-6">
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
-        <!-- Navegação por Abas Acessível -->
-        <div
-          role="tablist"
-          aria-label="Modo de lançamento de faltas"
-          class="grid grid-cols-2 p-1 rounded-xl bg-slate-950 border border-slate-800 w-full sm:w-auto"
-        >
-          <button
-            type="button"
-            role="tab"
-            id="tab-trimestre"
-            aria-selected="true"
-            aria-controls="panel-trimestre"
-            class="tab-btn px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 bg-sky-600 text-white shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
-          >
-            Por Trimestre
-          </button>
-          <button
-            type="button"
-            role="tab"
-            id="tab-total"
-            aria-selected="false"
-            aria-controls="panel-total"
-            class="tab-btn px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 text-slate-400 hover:text-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
-          >
-            Total Já Somado
-          </button>
-        </div>
-
-        <!-- Botão Limpar Campos -->
-        <button
-          type="button"
-          id="btn-clear"
-          class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-rose-500/15 text-slate-300 hover:text-rose-300 border border-slate-700 hover:border-rose-500/40 text-sm font-medium transition-all duration-200 active:scale-[0.98]"
-        >
-          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-          </svg>
-          Limpar Campos
+    <section class="card">
+      <div class="tabs" role="tablist">
+        <button type="button" class="tab-btn active" id="tab-trimestres" data-tab="trimestres">
+          Por Trimestre (1º, 2º e 3º)
+        </button>
+        <button type="button" class="tab-btn" id="tab-total" data-tab="total">
+          Total Já Somado
         </button>
       </div>
 
-      <!-- Painel 1: Por Trimestre -->
-      <div
-        id="panel-trimestre"
-        role="tabpanel"
-        aria-labelledby="tab-trimestre"
-        class="space-y-4"
-      >
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <!-- 1º Trimestre -->
-          <div class="bg-slate-950/70 border border-slate-800/90 rounded-xl p-3.5 focus-within:border-sky-500/70 transition-colors">
-            <label for="input-trim1" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
-              1º Trimestre
-            </label>
-            <input
-              type="number"
-              id="input-trim1"
-              min="0"
-              step="1"
-              inputmode="numeric"
-              placeholder="0"
-              class="w-full bg-transparent text-2xl font-bold text-white placeholder-slate-600 focus:outline-none"
-            />
-            <span class="block text-[11px] text-slate-500 mt-1">Aulas faltadas</span>
+      <!-- Aba 1: Por Trimestre -->
+      <div class="tab-panel active" id="panel-trimestres">
+        <div class="grid-3">
+          <div class="field">
+            <label for="input-t1">1º Trimestre (aulas)</label>
+            <input type="number" id="input-t1" min="0" step="1" inputmode="numeric" placeholder="0" />
           </div>
-
-          <!-- 2º Trimestre -->
-          <div class="bg-slate-950/70 border border-slate-800/90 rounded-xl p-3.5 focus-within:border-sky-500/70 transition-colors">
-            <label for="input-trim2" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
-              2º Trimestre
-            </label>
-            <input
-              type="number"
-              id="input-trim2"
-              min="0"
-              step="1"
-              inputmode="numeric"
-              placeholder="0"
-              class="w-full bg-transparent text-2xl font-bold text-white placeholder-slate-600 focus:outline-none"
-            />
-            <span class="block text-[11px] text-slate-500 mt-1">Aulas faltadas</span>
+          <div class="field">
+            <label for="input-t2">2º Trimestre (aulas)</label>
+            <input type="number" id="input-t2" min="0" step="1" inputmode="numeric" placeholder="0" />
           </div>
-
-          <!-- 3º Trimestre -->
-          <div class="bg-slate-950/70 border border-slate-800/90 rounded-xl p-3.5 focus-within:border-sky-500/70 transition-colors">
-            <label for="input-trim3" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
-              3º Trimestre
-            </label>
-            <input
-              type="number"
-              id="input-trim3"
-              min="0"
-              step="1"
-              inputmode="numeric"
-              placeholder="0"
-              class="w-full bg-transparent text-2xl font-bold text-white placeholder-slate-600 focus:outline-none"
-            />
-            <span class="block text-[11px] text-slate-500 mt-1">Aulas faltadas</span>
+          <div class="field">
+            <label for="input-t3">3º Trimestre (aulas)</label>
+            <input type="number" id="input-t3" min="0" step="1" inputmode="numeric" placeholder="0" />
           </div>
         </div>
-
-        <!-- Subtotal Somado em Tempo Real -->
-        <div class="flex flex-wrap items-center justify-between gap-2 px-4 py-3 rounded-xl bg-slate-950 border border-slate-800/80">
-          <div class="flex items-center gap-2 text-sm text-slate-400">
-            <svg class="w-4 h-4 text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-            </svg>
-            <span>Subtotal somado dos 3 trimestres:</span>
-          </div>
-          <div class="text-base sm:text-lg font-bold text-sky-400">
-            <span id="subtotal-trimestres">0</span> <span class="text-xs font-medium text-slate-400">faltas</span>
-          </div>
+        <div class="helper-bar">
+          <span>Soma dos 3 trimestres:</span>
+          <strong id="soma-trimestres-preview">0 faltas</strong>
         </div>
       </div>
 
-      <!-- Painel 2: Total Já Somado -->
-      <div
-        id="panel-total"
-        role="tabpanel"
-        aria-labelledby="tab-total"
-        class="hidden space-y-3"
-      >
-        <div class="bg-slate-950/70 border border-slate-800/90 rounded-xl p-4 focus-within:border-sky-500/70 transition-colors">
-          <label for="input-total-direto" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
-            Total de Faltas Acumuladas
-          </label>
-          <input
-            type="number"
-            id="input-total-direto"
-            min="0"
-            step="1"
-            inputmode="numeric"
-            placeholder="0"
-            class="w-full bg-transparent text-3xl font-bold text-white placeholder-slate-600 focus:outline-none"
-          />
-          <p class="text-xs text-slate-500 mt-1.5">
-            Ideal para digitar o total acumulado diretamente do boletim escolar ou do portal SEGES.
-          </p>
+      <!-- Aba 2: Total Já Somado -->
+      <div class="tab-panel" id="panel-total">
+        <div class="field">
+          <label for="input-total-direto">Total de faltas acumuladas no SEGES (aulas)</label>
+          <input type="number" id="input-total-direto" min="0" step="1" inputmode="numeric" placeholder="Ex: 84" />
+        </div>
+        <div class="helper-bar">
+          <span>Modo ativo:</span>
+          <strong>Contagem direta do total</strong>
         </div>
       </div>
 
-      <!-- Seção Recolhível: Configurações de Carga Horária -->
-      <details class="mt-5 pt-4 border-t border-slate-800/80 group">
-        <summary class="flex items-center justify-between cursor-pointer list-none text-sm font-medium text-slate-400 hover:text-slate-200 transition-colors select-none py-1">
-          <span class="inline-flex items-center gap-2">
-            <svg class="w-4 h-4 text-slate-400 group-open:text-sky-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-              <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-            Configurações de Carga Horária
-          </span>
-          <svg class="w-4 h-4 text-slate-500 transition-transform duration-200 group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-          </svg>
-        </summary>
+      <div class="actions-row">
+        <button type="button" class="btn-secondary" id="btn-toggle-config">
+          ⚙️ Configurar aulas/dia
+        </button>
+        <button type="button" class="btn-danger-outline" id="btn-limpar">
+          Limpar campos
+        </button>
+      </div>
 
-        <div class="mt-4 p-4 rounded-xl bg-slate-950/80 border border-slate-800 space-y-4">
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label for="config-aulas-dia" class="block text-xs font-semibold text-slate-300 mb-1.5">
-                Aulas por dia
-              </label>
-              <input
-                type="number"
-                id="config-aulas-dia"
-                min="1"
-                max="20"
-                step="1"
-                value="7"
-                class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white font-semibold focus:outline-none focus:border-sky-500"
-              />
-              <span class="block text-[11px] text-slate-500 mt-1">Padrão SEDU-ES: 7 aulas diárias</span>
-            </div>
-
-            <div>
-              <label for="config-total-aulas" class="block text-xs font-semibold text-slate-300 mb-1.5">
-                Total de aulas no ano
-              </label>
-              <input
-                type="number"
-                id="config-total-aulas"
-                min="1"
-                step="1"
-                value="1400"
-                class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white font-semibold focus:outline-none focus:border-sky-500"
-              />
-              <span class="block text-[11px] text-slate-500 mt-1">Padrão: 1.400 aulas (200 dias letivos × 7)</span>
-            </div>
+      <div class="config-panel" id="config-panel">
+        <div class="grid-2">
+          <div class="field">
+            <label for="cfg-aulas-dia">Aulas por dia</label>
+            <input type="number" id="cfg-aulas-dia" min="1" max="15" step="1" value="7" />
           </div>
-
-          <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-800/80">
-            <span class="text-xs text-slate-400">
-              Limite calculado (25%): <strong id="config-limite-preview" class="text-slate-200">350 faltas</strong>
-            </span>
-            <button
-              type="button"
-              id="btn-reset-config"
-              class="text-xs font-semibold text-sky-400 hover:text-sky-300 underline underline-offset-4 py-1"
-            >
-              Restaurar padrão SEDU-ES (7 / 1400)
-            </button>
+          <div class="field">
+            <label for="cfg-total-aulas">Total de aulas no ano</label>
+            <input type="number" id="cfg-total-aulas" min="100" step="10" value="1400" />
           </div>
         </div>
-      </details>
+        <p class="stat-sub" style="margin-top: 8px;" id="cfg-resumo">
+          Regra atual: 7 aulas/dia • Limite máximo de 350 faltas (25% de 1400 aulas).
+        </p>
+      </div>
     </section>
 
-    <!-- Barra de Progresso Visual da Frequência / Limite de Faltas -->
-    <section aria-label="Indicador de risco e frequência" class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-xl mb-6">
-      <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+    <section class="card">
+      <div class="status-header">
         <div>
-          <h2 class="text-sm font-bold uppercase tracking-wider text-slate-300">
-            Termômetro de Frequência Escolar
-          </h2>
-          <p id="status-description" class="text-xs sm:text-sm text-slate-400 mt-0.5">
-            Você utilizou <strong class="text-white">0%</strong> do limite máximo permitido de faltas.
-          </p>
+          <span class="stat-label">Situação Atual</span>
+          <h2 id="status-titulo" style="font-size: 1.15rem; margin-top: 2px;">Frequência Segura</h2>
+        </div>
+        <span class="status-pill" id="status-pill">0% do limite usado</span>
+      </div>
+
+      <div class="progress-track">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+      <div class="progress-meta">
+        <span id="meta-faltas">0 / 350 faltas permitidas</span>
+        <span id="meta-frequencia">Frequência: 100.0%</span>
+      </div>
+
+      <div class="results-grid">
+        <div class="stat-box">
+          <div class="stat-label">Total de Faltas</div>
+          <div class="stat-value" id="res-total-faltas">0 aulas</div>
+          <div class="stat-sub" id="res-dias-faltados">Equivale a 0 dias inteiros</div>
         </div>
 
-        <!-- Badge de Status Dinâmico -->
-        <span
-          id="status-badge"
-          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 transition-colors duration-300"
-        >
-          <span id="status-dot" class="w-2 h-2 rounded-full bg-emerald-400"></span>
-          <span id="status-label">Seguro</span>
-        </span>
-      </div>
+        <div class="stat-box">
+          <div class="stat-label">Frequência Geral</div>
+          <div class="stat-value" id="res-frequencia">100.0%</div>
+          <div class="stat-sub">Mínimo exigido: 75.0%</div>
+        </div>
 
-      <!-- Barra de Progresso -->
-      <div class="w-full h-4 bg-slate-950 rounded-full overflow-hidden border border-slate-800 p-0.5">
-        <div
-          id="progress-bar-fill"
-          role="progressbar"
-          aria-valuenow="0"
-          aria-valuemin="0"
-          aria-valuemax="100"
-          style="width: 0%"
-          class="h-full rounded-full bg-emerald-500 transition-all duration-500 ease-out"
-        ></div>
-      </div>
+        <div class="stat-box highlight-ok">
+          <div class="stat-label">Ainda pode faltar (sem reprovar)</div>
+          <div class="stat-value" id="res-pode-dias">50 dias</div>
+          <div class="stat-sub" id="res-pode-aulas">Ou 350 aulas no total</div>
+        </div>
 
-      <!-- Legenda inferior da barra -->
-      <div class="flex flex-wrap items-center justify-between gap-2 mt-2.5 text-xs text-slate-400">
-        <span>0 faltas (100% frequência)</span>
-        <span id="progress-limit-text" class="font-medium text-slate-300">
-          Limite: 350 faltas (75% frequência)
-        </span>
+        <div class="stat-box highlight-danger">
+          <div class="stat-label">Reprova se faltar</div>
+          <div class="stat-value" id="res-reprova-dias">51 dias</div>
+          <div class="stat-sub" id="res-reprova-aulas">Ao atingir 351 faltas</div>
+        </div>
       </div>
     </section>
 
-    <!-- Grade dos 4 Cards Principais de Resultado -->
-    <section aria-label="Resultados detalhados" class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+    <footer>
+      Cálculo baseado em 200 dias letivos × 7 aulas/dia = 1.400 aulas (limite de 25% = 350 faltas; 351 faltas = reprovação).
+    </footer>
+  </main>
 
-      <!-- Card 1: Total de Faltas -->
-      <article class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-lg flex flex-col justify-between">
-        <div class="flex items-start justify-between gap-3">
-          <div>
-            <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Total de Faltas</p>
-            <p id="card-total-faltas" class="text-3xl sm:text-4xl font-extrabold text-white mt-2">0</p>
-          </div>
-          <div class="p-2.5 rounded-xl bg-sky-500/10 border border-sky-500/20 text-sky-400">
-            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-            </svg>
-          </div>
-        </div>
-        <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs sm:text-sm">
-          <span class="text-slate-400">Frequência atual:</span>
-          <span id="card-frequencia-pct" class="font-bold text-emerald-400">100,0%</span>
-        </div>
-      </article>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const STORAGE_KEY = "sedu_es_faltas_v2";
 
-      <!-- Card 2: Faltas Restantes -->
-      <article class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-lg flex flex-col justify-between">
-        <div class="flex items-start justify-between gap-3">
-          <div>
-            <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Faltas Restantes</p>
-            <p id="card-faltas-restantes" class="text-3xl sm:text-4xl font-extrabold text-emerald-400 mt-2">350</p>
-          </div>
-          <div class="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
-            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-            </svg>
-          </div>
-        </div>
-        <div class="mt-4 pt-3 border-t border-slate-800/80 text-xs sm:text-sm text-slate-400">
-          <span id="card-restantes-sub">Margem segura até atingir <strong class="text-slate-200">350 faltas</strong></span>
-        </div>
-      </article>
+      const state = {
+        activeTab: "trimestres",
+        t1: 0,
+        t2: 0,
+        t3: 0,
+        totalDireto: 0,
+        aulasPorDia: 7,
+        totalAulasAno: 1400
+      };
 
-      <!-- Card 3: Dias que ainda pode faltar -->
-      <article class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-lg flex flex-col justify-between">
-        <div class="flex items-start justify-between gap-3">
-          <div>
-            <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Dias que Ainda Pode Faltar</p>
-            <div class="flex items-baseline gap-2 mt-2">
-              <p id="card-dias-pode" class="text-3xl sm:text-4xl font-extrabold text-white">50</p>
-              <span id="card-dias-pode-unit" class="text-sm font-semibold text-slate-400">dias inteiros</span>
-            </div>
-          </div>
-          <div class="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400">
-            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-          </div>
-        </div>
-        <div class="mt-4 pt-3 border-t border-slate-800/80 text-xs sm:text-sm text-slate-400">
-          <span id="card-aulas-avulsas">E mais <strong class="text-slate-200">0 aulas avulsas</strong> sem reprovar</span>
-        </div>
-      </article>
+      // Elementos DOM
+      const tabTrimestres = document.getElementById("tab-trimestres");
+      const tabTotal = document.getElementById("tab-total");
+      const panelTrimestres = document.getElementById("panel-trimestres");
+      const panelTotal = document.getElementById("panel-total");
 
-      <!-- Card 4: Dias de falta para reprovar -->
-      <article id="card-reprovar-box" class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-lg flex flex-col justify-between transition-colors duration-300">
-        <div class="flex items-start justify-between gap-3">
-          <div>
-            <p class="text-xs fo
+      const inputT1 = document.getElementById("input-t1");
+      const inputT2 = document.getElementById("input-t2");
+      const inputT3 = document.getElementById("input-t3");
+      const inputTotalDireto = document.getElementById("input-total-direto");
+      const somaTrimestresPreview = document.getElementById("soma-trimestres-preview");
+
+      const cfgAulasDia = document.getElementById("cfg-aulas-dia");
+      const cfgTotalAulas = document.getElementById("cfg-total-aulas");
+      const cfgResumo = document.getElementById("cfg-resumo");
+      const configPanel = document.getElementById("config-panel");
+      const btnToggleConfig = document.getElementById("btn-toggle-config");
+      const btnLimpar = document.getElementById("btn-limpar");
+
+      const statusTitulo = document.getElementById("status-titulo");
+      const statusPill = document.getElementById("status-pill");
+      const progressFill = document.getElementById("progress-fill");
+      const metaFaltas = document.getElementById("meta-faltas");
+      const metaFrequencia = document.getElementById("meta-frequencia");
+
+      const resTotalFaltas = document.getElementById("res-total-faltas");
+      const resDiasFaltados = document.getElementById("res-dias-faltados");
+      const resFrequencia = document.getElementById("res-frequencia");
+      const resPodeDias = document.getElementById("res-pode-dias");
+      const resPodeAulas = document.getElementById("res-pode-aulas");
+      const resReprovaDias = document.getElementById("res-reprova-dias");
+      const resReprovaAulas = document.getElementById("res-reprova-aulas");
+
+      function toNonNegativeInt(value) {
+        const parsed = parseInt(value, 10);
+        return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+      }
+
+      function formatDiasEAulas(totalAulas, aulasPorDia) {
+        const diasInteiros = Math.floor(totalAulas / aulasPorDia);
+        const aulasRestantes = totalAulas % aulasPorDia;
+        if (diasInteiros === 0 && aulasRestantes === 0) return "0 dias";
+        if (aulasRestantes === 0) {
+          return `${diasInteiros} ${diasInteiros === 1 ? "dia" : "dias"}`;
+        }
+        if (diasInteiros === 0) {
+          return `${aulasRestantes} ${aulasRestantes === 1 ? "aula" : "aulas"}`;
+        }
+        return `${diasInteiros}d + ${aulasRestantes}a`;
+      }
+
+      function saveState() {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        } catch (err) {
+          // Ignora erro caso o navegador bloqueie localStorage
+        }
+      }
+
+      function loadState() {
+        try {
+          const saved = localStorage.getItem(STORAGE_KEY);
+          if (!saved) return;
+          const parsed = JSON.parse(saved);
+          if (parsed && typeof parsed === "object") {
+            state.activeTab = parsed.activeTab === "total" ? "total" : "trimestres";
+            state.t1 = toNonNegativeInt(parsed.t1);
+            state.t2 = toNonNegativeInt(parsed.t2);
+            state.t3 = toNonNegativeInt(parsed.t3);
+            state.totalDireto = toNonNegativeInt(parsed.totalDireto);
+            state.aulasPorDia = Math.max(1, toNonNegativeInt(parsed.aulasPorDia) || 7);
+            state.totalAulasAno = Math.max(100, toNonNegativeInt(parsed.totalAulasAno) || 1400);
+          }
+        } catch (err) {
+          // Segue com valores padrão
+        }
+      }
+
+      function syncInputsFromState() {
+        inputT1.value = state.t1 > 0 ? state.t1 : "";
+        inputT2.value = state.t2 > 0 ? state.t2 : "";
+        inputT3.value = state.t3 > 0 ? state.t3 : "";
+        inputTotalDireto.value = state.totalDireto > 0 ? state.totalDireto : "";
+        cfgAulasDia.value = state.aulasPorDia;
+        cfgTotalAulas.value = state.totalAulasAno;
+        setActiveTab(state.activeTab, false);
+      }
+
+      function setActiveTab(tabName, shouldRecalc = true) {
+        state.activeTab = tabName;
+        const isTrimestres = tabName === "trimestres";
+
+        tabTrimestres.classList.toggle("active", isTrimestres);
+        tabTotal.classList.toggle("active", !isTrimestres);
+
+        panelTrimestres.classList.toggle("active", isTrimestres);
+        panelTotal.classList.toggle("active", !isTrimestres);
+
+        if (shouldRecalc) {
+          saveState();
+          calculate();
+        }
+      }
+
+      function calculate() {
+        const aulasPorDia = Math.max(1, toNonNegativeInt(cfgAulasDia.value) || 7);
+        const totalAulasAno = Math.max(100, toNonNegativeInt(cfgTotalAulas.value) || 1400);
+
+        state.aulasPorDia = aulasPorDia;
+        state.totalAulasAno = totalAulasAno;
+        state.t1 = toNonNegativeInt(inputT1.value);
+        state.t2 = toNonNegativeInt(inputT2.value);
+        state.t3 = toNonNegativeInt(inputT3.value);
+        state.totalDireto = toNonNegativeInt(inputTotalDireto.value);
+
+        const somaTrimestres = state.t1 + state.t2 + state.t3;
+        somaTrimestresPreview.textContent = `${somaTrimestres} ${somaTrimestres === 1 ? "falta" : "faltas"}`;
+
+        const limiteFaltas = Math.floor(totalAulasAno * 0.25); // 350 no padrão 1400
+        const faltasParaReprovarAbsoluto = limiteFaltas + 1;   // 351 no padrão 1400
+
+        cfgResumo.textContent = `Regra atual: ${aulasPorDia} aulas/dia • Limite máximo de ${limiteFaltas} faltas (25% de ${totalAulasAno} aulas).`;
+
+        const totalFaltas = state.activeTab === "trimestres" ? somaTrimestres : state.totalDireto;
+
+        // Porcentagens
+        const pctFaltas = (totalFaltas / totalAulasAno) * 100;
+        const pctFrequencia = Math.max(0, 100 - pctFaltas);
+        const pctLimiteUsado = limiteFaltas > 0 ? (totalFaltas / limiteFaltas) * 100 : 100;
+
+        // Margem segura (ainda pode faltar)
+        const aulasAindaPodeFaltar = Math.max(0, limiteFaltas - totalFaltas);
+        const diasInteirosPodeFaltar = Math.floor(aulasAindaPodeFaltar / aulasPorDia);
+        const sobraAulasPodeFaltar = aulasAindaPodeFaltar % aulasPorDia;
+
+        // Quantos dias faltando para reprovar
+        const aulasRestantesParaReprovar = Math.max(0, faltasParaReprovarAbsoluto - totalFaltas);
+        const diasInteirosParaReprovar = Math.ceil(aulasRestantesParaReprovar / aulasPorDia);
+
+        // Atualiza UI
+        resTotalFaltas.textContent = `${totalFaltas} ${totalFaltas === 1 ? "aula" : "aulas"}`;
+        const diasJaFaltados = (totalFaltas / aulasPorDia).toFixed(1).replace(".0", "");
+        resDiasFaltados.textContent = `Equivale a ${diasJaFaltados} ${diasJaFaltados === "1" ? "dia letivo" : "dias letivos"}`;
+
+        resFrequencia.textContent = `${pctFrequencia.toFixed(1)}%`;
+        metaFaltas.textContent = `${totalFaltas} / ${limiteFaltas} faltas permitidas`;
+        metaFrequencia.textContent = `Frequência: ${pctFrequencia.toFixed(1)}%`;
+
+        // Atualiza cartões de "Ain
