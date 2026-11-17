@@ -60,7 +60,7 @@
 
       <div class="actions-row">
         <button type="button" class="btn-secondary" id="btn-toggle-config">
-          ⚙️ Configurar aulas/dia
+          ⚙️ Configurar aulas/dia e calendário
         </button>
         <button type="button" class="btn-danger-outline" id="btn-limpar">
           Limpar campos
@@ -68,7 +68,7 @@
       </div>
 
       <div class="config-panel" id="config-panel">
-        <div class="grid-2">
+        <div class="grid-3">
           <div class="field">
             <label for="cfg-aulas-dia">Aulas por dia</label>
             <input type="number" id="cfg-aulas-dia" min="1" max="15" step="1" value="7" />
@@ -77,8 +77,24 @@
             <label for="cfg-total-aulas">Total de aulas no ano</label>
             <input type="number" id="cfg-total-aulas" min="100" step="10" value="1400" />
           </div>
+          <div class="field">
+            <label for="cfg-data-fim">Fim das aulas</label>
+            <input type="date" id="cfg-data-fim" value="2026-12-15" />
+          </div>
         </div>
-        <p class="stat-sub" style="margin-top: 8px;" id="cfg-resumo">
+
+        <div class="checkbox-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="cfg-incluir-hoje" checked />
+            <span>Incluir o dia de hoje na contagem de dias letivos restantes</span>
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" id="cfg-descontar-feriados" checked />
+            <span>Descontar feriados nacionais (ex: 20/11 Consciência Negra)</span>
+          </label>
+        </div>
+
+        <p class="stat-sub" style="margin-top: 10px;" id="cfg-resumo">
           Regra atual: 7 aulas/dia • Limite máximo de 350 faltas (25% de 1400 aulas).
         </p>
       </div>
@@ -128,8 +144,48 @@
       </div>
     </section>
 
+    <!-- Nova Seção: Reta Final até 15 de Dezembro -->
+    <section class="card" id="card-reta-final">
+      <div class="status-header">
+        <div>
+          <span class="stat-label" id="fim-subtitulo-data">Reta Final • Encerramento em 15/12/2026</span>
+          <h2 style="font-size: 1.15rem; margin-top: 2px;">Contagem até o Fim das Aulas</h2>
+        </div>
+        <span class="status-pill" id="fim-status-pill">Pode faltar até o fim</span>
+      </div>
+
+      <div class="verdict-banner ok" id="fim-veredito-box">
+        <div class="verdict-title" id="fim-veredito-titulo">
+          SIM! Você consegue faltar até as aulas acabarem sem reprovar
+        </div>
+        <p class="verdict-desc" id="fim-veredito-desc">
+          Calculando dias letivos restantes até 15/12/2026...
+        </p>
+      </div>
+
+      <div class="results-grid-3">
+        <div class="stat-box">
+          <div class="stat-label">Dias Letivos Restantes</div>
+          <div class="stat-value" id="fim-dias-restantes">0 dias</div>
+          <div class="stat-sub" id="fim-aulas-restantes">0 aulas até 15/12</div>
+        </div>
+
+        <div class="stat-box">
+          <div class="stat-label">Presença Mínima Obrigatória</div>
+          <div class="stat-value" id="fim-presenca-dias">0 dias</div>
+          <div class="stat-sub" id="fim-presenca-aulas">Para não reprovar</div>
+        </div>
+
+        <div class="stat-box">
+          <div class="stat-label">Se Faltar Tudo Até 15/12</div>
+          <div class="stat-value" id="fim-projecao-faltas">0 faltas</div>
+          <div class="stat-sub" id="fim-projecao-freq">Frequência final: 100.0%</div>
+        </div>
+      </div>
+    </section>
+
     <footer>
-      Cálculo baseado em 200 dias letivos × 7 aulas/dia = 1.400 aulas (limite de 25% = 350 faltas; 351 faltas = reprovação).
+      Cálculo baseado em 200 dias letivos × 7 aulas/dia = 1.400 aulas (limite de 25% = 350 faltas; 351 faltas = reprovação) • Fim das aulas: 15 de dezembro.
     </footer>
   </main>
 
