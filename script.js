@@ -1,5 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const STORAGE_KEY = "sedu_es_faltas_v2";
+  const STORAGE_KEY = "sedu_es_faltas_v3";
+  const DEFAULT_END_DATE = `${new Date().getFullYear()}-12-15`;
 
   const state = {
     activeTab: "trimestres",
@@ -8,10 +9,13 @@ document.addEventListener("DOMContentLoaded", () => {
     t3: 0,
     totalDireto: 0,
     aulasPorDia: 7,
-    totalAulasAno: 1400
+    totalAulasAno: 1400,
+    dataFim: DEFAULT_END_DATE,
+    incluirHoje: true,
+    descontarFeriados: true
   };
 
-  // Elementos DOM
+  // Elementos DOM existentes
   const tabTrimestres = document.getElementById("tab-trimestres");
   const tabTotal = document.getElementById("tab-total");
   const panelTrimestres = document.getElementById("panel-trimestres");
@@ -25,6 +29,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const cfgAulasDia = document.getElementById("cfg-aulas-dia");
   const cfgTotalAulas = document.getElementById("cfg-total-aulas");
+  const cfgDataFim = document.getElementById("cfg-data-fim");
+  const cfgIncluirHoje = document.getElementById("cfg-incluir-hoje");
+  const cfgDescontarFeriados = document.getElementById("cfg-descontar-feriados");
   const cfgResumo = document.getElementById("cfg-resumo");
   const configPanel = document.getElementById("config-panel");
   const btnToggleConfig = document.getElementById("btn-toggle-config");
@@ -44,6 +51,32 @@ document.addEventListener("DOMContentLoaded", () => {
   const resReprovaDias = document.getElementById("res-reprova-dias");
   const resReprovaAulas = document.getElementById("res-reprova-aulas");
 
+  // Elementos DOM da nova seção: Reta Final até 15/12
+  const fimSubtituloData = document.getElementById("fim-subtitulo-data");
+  const fimStatusPill = document.getElementById("fim-status-pill");
+  const fimVereditoBox = document.getElementById("fim-veredito-box");
+  const fimVereditoTitulo = document.getElementById("fim-veredito-titulo");
+  const fimVereditoDesc = document.getElementById("fim-veredito-desc");
+  const fimDiasRestantes = document.getElementById("fim-dias-restantes");
+  const fimAulasRestantes = document.getElementById("fim-aulas-restantes");
+  const fimPresencaDias = document.getElementById("fim-presenca-dias");
+  const fimPresencaAulas = document.getElementById("fim-presenca-aulas");
+  const fimProjecaoFaltas = document.getElementById("fim-projecao-faltas");
+  const fimProjecaoFreq = document.getElementById("fim-projecao-freq");
+
+  // Feriados nacionais fixos (MM-DD)
+  const FERIADOS_FIXOS = new Set([
+    "01-01", // Confraternização Universal
+    "04-21", // Tiradentes
+    "05-01", // Dia do Trabalho
+    "09-07", // Independência do Brasil
+    "10-12", // Nossa Senhora Aparecida
+    "11-02", // Finados
+    "11-15", // Proclamação da República
+    "11-20", // Dia Nacional de Zumbi e da Consciência Negra
+    "12-25"  // Natal
+  ]);
+
   function toNonNegativeInt(value) {
     const parsed = parseInt(value, 10);
     return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
@@ -62,6 +95,57 @@ document.addEventListener("DOMContentLoaded", () => {
     return `${diasInteiros}d + ${aulasRestantes}a`;
   }
 
+  function parseLocalDate(isoDateStr) {
+    if (!isoDateStr || !/^\d{4}-\d{2}-\d{2}$/.test(isoDateStr)) {
+      return new Date(new Date().getFullYear(), 11, 15);
+    }
+    const [y, m, d] = isoDateStr.split("-").map(Number);
+    return new Date(y, m - 1, d);
+  }
+
+  function formatDateBR(dateObj) {
+    const dd = String(dateObj.getDate()).padStart(2, "0");
+    const mm = String(dateObj.getMonth() + 1).padStart(2, "0");
+    const yyyy = dateObj.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+  }
+
+  function contarDiasLetivosAte(dataFimStr, incluirHoje, descontarFeriados) {
+    const agora = new Date();
+    const hoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
+    const fim = parseLocalDate(dataFimStr);
+
+    if (fim < hoje) {
+      return { diasLetivos: 0, diasCorridos: 0, encerrado: true, dataFimFormatada: formatDateBR(fim) };
+    }
+
+    const msPorDia = 24 * 60 * 60 * 1000;
+    const diasCorridos = Math.max(0, Math.round((fim - hoje) / msPorDia));
+
+    const cursor = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() + (incluirHoje ? 0 : 1));
+    let diasLetivos = 0;
+
+    while (cursor <= fim) {
+      const diaSemana = cursor.getDay(); // 0 = Dom, 6 = Sáb
+      if (diaSemana !== 0 && diaSemana !== 6) {
+        const mm = String(cursor.getMonth() + 1).padStart(2, "0");
+        const dd = String(cursor.getDate()).padStart(2, "0");
+        const chaveFeriado = `${mm}-${dd}`;
+        if (!descontarFeriados || !FERIADOS_FIXOS.has(chaveFeriado)) {
+          diasLetivos++;
+        }
+      }
+      cursor.setDate(cursor.getDate() + 1);
+    }
+
+    return {
+      diasLetivos,
+      diasCorridos,
+      encerrado: false,
+      dataFimFormatada: formatDateBR(fim)
+    };
+  }
+
   function saveState() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -72,7 +156,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function loadState() {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
+      const saved = localStorage.getItem(STORAGE_KEY) || localStorage.getItem("sedu_es_faltas_v2");
       if (!saved) return;
       const parsed = JSON.parse(saved);
       if (parsed && typeof parsed === "object") {
@@ -83,6 +167,15 @@ document.addEventListener("DOMContentLoaded", () => {
         state.totalDireto = toNonNegativeInt(parsed.totalDireto);
         state.aulasPorDia = Math.max(1, toNonNegativeInt(parsed.aulasPorDia) || 7);
         state.totalAulasAno = Math.max(100, toNonNegativeInt(parsed.totalAulasAno) || 1400);
+        if (typeof parsed.dataFim === "string" && /^\d{4}-\d{2}-\d{2}$/.test(parsed.dataFim)) {
+          state.dataFim = parsed.dataFim;
+        }
+        if (typeof parsed.incluirHoje === "boolean") {
+          state.incluirHoje = parsed.incluirHoje;
+        }
+        if (typeof parsed.descontarFeriados === "boolean") {
+          state.descontarFeriados = parsed.descontarFeriados;
+        }
       }
     } catch (err) {
       // Segue com valores padrão
@@ -96,6 +189,9 @@ document.addEventListener("DOMContentLoaded", () => {
     inputTotalDireto.value = state.totalDireto > 0 ? state.totalDireto : "";
     cfgAulasDia.value = state.aulasPorDia;
     cfgTotalAulas.value = state.totalAulasAno;
+    cfgDataFim.value = state.dataFim;
+    cfgIncluirHoje.checked = state.incluirHoje;
+    cfgDescontarFeriados.checked = state.descontarFeriados;
     setActiveTab(state.activeTab, false);
   }
 
@@ -115,12 +211,117 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  function updateRetaFinal(totalFaltas, limiteFaltas, aulasAindaPodeFaltar, aulasPorDia, totalAulasAno) {
+    const infoCalendario = contarDiasLetivosAte(
+      state.dataFim,
+      state.incluirHoje,
+      state.descontarFeriados
+    );
+
+    const { diasLetivos, diasCorridos, encerrado, dataFimFormatada } = infoCalendario;
+    const aulasLetivasRestantes = diasLetivos * aulasPorDia;
+
+    fimSubtituloData.textContent = `Reta Final • Encerramento em ${dataFimFormatada}`;
+    fimDiasRestantes.textContent = `${diasLetivos} ${diasLetivos === 1 ? "dia" : "dias"}`;
+    fimAulasRestantes.textContent = `${aulasLetivasRestantes} aulas (${diasCorridos} ${diasCorridos === 1 ? "dia corrido" : "dias corridos"})`;
+
+    // Projeção se faltar tudo até o fim das aulas
+    const faltasSeFaltarTudo = totalFaltas + aulasLetivasRestantes;
+    const pctFaltasFinal = (faltasSeFaltarTudo / totalAulasAno) * 100;
+    const freqFinal = Math.max(0, 100 - pctFaltasFinal);
+    const passaFaltandoTudo = faltasSeFaltarTudo <= limiteFaltas;
+
+    fimProjecaoFaltas.textContent = `${faltasSeFaltarTudo} ${faltasSeFaltarTudo === 1 ? "falta" : "faltas"}`;
+    fimProjecaoFreq.textContent = `Freq. final: ${freqFinal.toFixed(1)}% (${passaFaltandoTudo ? "Aprovado" : "Reprova"})`;
+
+    // Limpa classes de estado
+    fimStatusPill.classList.remove("warn", "danger");
+    fimVereditoBox.classList.remove("ok", "warn", "danger");
+
+    if (encerrado) {
+      fimPresencaDias.textContent = "0 dias";
+      fimPresencaAulas.textContent = "Período letivo encerrado";
+
+      if (totalFaltas > limiteFaltas) {
+        fimStatusPill.textContent = "Reprovado por faltas";
+        fimStatusPill.classList.add("danger");
+        fimVereditoBox.classList.add("danger");
+        fimVereditoTitulo.textContent = `Ano letivo encerrado (${dataFimFormatada}) acima do limite`;
+        fimVereditoDesc.textContent = `Você fechou com ${totalFaltas} faltas, ultrapassando o máximo de ${limiteFaltas} faltas permitidas.`;
+      } else {
+        fimStatusPill.textContent = "Aprovado por frequência";
+        fimVereditoBox.classList.add("ok");
+        fimVereditoTitulo.textContent = `Ano letivo encerrado (${dataFimFormatada}) dentro do limite!`;
+        fimVereditoDesc.textContent = `Você fechou com ${totalFaltas} faltas de ${limiteFaltas} permitidas. Frequência dentro da regra da SEDU-ES.`;
+      }
+      return;
+    }
+
+    if (totalFaltas > limiteFaltas) {
+      const excesso = totalFaltas - limiteFaltas;
+      fimStatusPill.textContent = "Limite já ultrapassado";
+      fimStatusPill.classList.add("danger");
+      fimVereditoBox.classList.add("danger");
+
+      fimPresencaDias.textContent = "Excedido";
+      fimPresencaAulas.textContent = `Passou ${excesso} ${excesso === 1 ? "aula" : "aulas"} do teto`;
+
+      fimVereditoTitulo.textContent = "NÃO — Você já ultrapassou o limite de faltas permitidas";
+      fimVereditoDesc.textContent = `Mesmo indo a todos os ${diasLetivos} dias letivos restantes (${aulasLetivasRestantes} aulas) até ${dataFimFormatada}, você já está com ${totalFaltas} faltas (limite: ${limiteFaltas}).`;
+      return;
+    }
+
+    if (aulasAindaPodeFaltar >= aulasLetivasRestantes) {
+      const sobraAulas = aulasAindaPodeFaltar - aulasLetivasRestantes;
+      fimStatusPill.textContent = "Pode faltar até o fim!";
+      fimVereditoBox.classList.add("ok");
+
+      fimPresencaDias.textContent = "0 dias";
+      fimPresencaAulas.textContent = "Nenhuma aula obrigatória";
+
+      fimVereditoTitulo.textContent = "SIM! Você consegue faltar até as aulas acabarem sem reprovar";
+      if (diasLetivos === 0) {
+        fimVereditoDesc.textContent = `Não há mais dias letivos até ${dataFimFormatada} e você está dentro do limite (${totalFaltas}/${limiteFaltas} faltas).`;
+      } else {
+        fimVereditoDesc.textContent = `Faltam ${diasLetivos} ${diasLetivos === 1 ? "dia letivo" : "dias letivos"} (${aulasLetivasRestantes} aulas) até ${dataFimFormatada}, e você ainda pode faltar ${aulasAindaPodeFaltar} aulas. Mesmo faltando todos os dias restantes, você não reprova e ainda sobram ${formatDiasEAulas(sobraAulas, aulasPorDia)} (${sobraAulas} aulas) de margem!`;
+      }
+      return;
+    }
+
+    // Não consegue faltar tudo até 15/12 sem reprovar
+    const aulasMinimasPresenca = aulasLetivasRestantes - aulasAindaPodeFaltar;
+    const diasMinimosPresenca = Math.ceil(aulasMinimasPresenca / aulasPorDia);
+
+    fimPresencaDias.textContent = `${diasMinimosPresenca} ${diasMinimosPresenca === 1 ? "dia" : "dias"}`;
+    fimPresencaAulas.textContent = `Mínimo de ${aulasMinimasPresenca} ${aulasMinimasPresenca === 1 ? "aula" : "aulas"}`;
+
+    if (aulasAindaPodeFaltar === 0) {
+      fimStatusPill.textContent = "0 faltas disponíveis";
+      fimStatusPill.classList.add("danger");
+      fimVereditoBox.classList.add("danger");
+
+      fimVereditoTitulo.textContent = "NÃO! Você não pode faltar mais nenhum dia até as aulas acabarem";
+      fimVereditoDesc.textContent = `Você já atingiu exatamente ${limiteFaltas} faltas. Para não reprovar, precisa comparecer a todos os ${diasLetivos} dias letivos restantes (${aulasLetivasRestantes} aulas) até ${dataFimFormatada}.`;
+    } else {
+      fimStatusPill.textContent = `Ir pelo menos ${diasMinimosPresenca}d`;
+      fimStatusPill.classList.add("warn");
+      fimVereditoBox.classList.add("warn");
+
+      fimVereditoTitulo.textContent = `NÃO dá para faltar tudo — você precisa ir pelo menos ${diasMinimosPresenca} ${diasMinimosPresenca === 1 ? "dia" : "dias"}`;
+      fimVereditoDesc.textContent = `Faltam ${diasLetivos} dias letivos (${aulasLetivasRestantes} aulas) até ${dataFimFormatada}, mas você só pode faltar mais ${formatDiasEAulas(aulasAindaPodeFaltar, aulasPorDia)} (${aulasAindaPodeFaltar} aulas). Compareça a pelo menos ${aulasMinimasPresenca} aulas para fechar o ano aprovado.`;
+    }
+  }
+
   function calculate() {
     const aulasPorDia = Math.max(1, toNonNegativeInt(cfgAulasDia.value) || 7);
     const totalAulasAno = Math.max(100, toNonNegativeInt(cfgTotalAulas.value) || 1400);
 
     state.aulasPorDia = aulasPorDia;
     state.totalAulasAno = totalAulasAno;
+    state.dataFim = cfgDataFim.value || DEFAULT_END_DATE;
+    state.incluirHoje = cfgIncluirHoje.checked;
+    state.descontarFeriados = cfgDescontarFeriados.checked;
+
     state.t1 = toNonNegativeInt(inputT1.value);
     state.t2 = toNonNegativeInt(inputT2.value);
     state.t3 = toNonNegativeInt(inputT3.value);
@@ -150,7 +351,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const aulasRestantesParaReprovar = Math.max(0, faltasParaReprovarAbsoluto - totalFaltas);
     const diasInteirosParaReprovar = Math.ceil(aulasRestantesParaReprovar / aulasPorDia);
 
-    // Atualiza UI
+    // Atualiza UI principal
     resTotalFaltas.textContent = `${totalFaltas} ${totalFaltas === 1 ? "aula" : "aulas"}`;
     const diasJaFaltados = (totalFaltas / aulasPorDia).toFixed(1).replace(".0", "");
     resDiasFaltados.textContent = `Equivale a ${diasJaFaltados} ${diasJaFaltados === "1" ? "dia letivo" : "dias letivos"}`;
@@ -205,6 +406,9 @@ document.addEventListener("DOMContentLoaded", () => {
       progressFill.style.backgroundColor = "var(--ok)";
     }
 
+    // Atualiza seção de reta final até 15/12
+    updateRetaFinal(totalFaltas, limiteFaltas, aulasAindaPodeFaltar, aulasPorDia, totalAulasAno);
+
     saveState();
   }
 
@@ -212,9 +416,14 @@ document.addEventListener("DOMContentLoaded", () => {
   tabTrimestres.addEventListener("click", () => setActiveTab("trimestres", true));
   tabTotal.addEventListener("click", () => setActiveTab("total", true));
 
-  // Eventos de Digitação
-  [inputT1, inputT2, inputT3, inputTotalDireto, cfgAulasDia, cfgTotalAulas].forEach((el) => {
+  // Eventos de Digitação e Alteração
+  [inputT1, inputT2, inputT3, inputTotalDireto, cfgAulasDia, cfgTotalAulas, cfgDataFim].forEach((el) => {
     el.addEventListener("input", calculate);
+    el.addEventListener("change", calculate);
+  });
+
+  [cfgIncluirHoje, cfgDescontarFeriados].forEach((el) => {
+    el.addEventListener("change", calculate);
   });
 
   // Abrir/Fechar Configurações
@@ -240,4 +449,3 @@ document.addEventListener("DOMContentLoaded", () => {
   syncInputsFromState();
   calculate();
 });
-          
